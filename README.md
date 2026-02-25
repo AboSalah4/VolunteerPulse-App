@@ -6,6 +6,7 @@
 * **Esslam Mansour**
 * **Gurmeet Gurmeet**
 * **Quoc Quan Nguyen**
+* **Mohamed Khatri**
 
 ---
 
