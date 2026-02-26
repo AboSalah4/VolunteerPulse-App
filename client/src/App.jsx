@@ -21,10 +21,7 @@ function VolunteerApp() {
 
   // Fetch Tasks
   useEffect(() => {
-    axios
-      .get(
-        `https://volunteer-pulse-backend.onrender.com/api/tasks?maxTime=${filter}`,
-      )
+    axios.get(`${import.meta.env.VITE_API_URL}/api/tasks?maxTime=${filter}`)
       .then((res) => setTasks(res.data))
       .catch((err) => console.error(err));
   }, [filter]);
