@@ -22,7 +22,9 @@ function VolunteerApp() {
   // Fetch Tasks
   useEffect(() => {
     axios
-      .get(`http://localhost:5001/api/tasks?maxTime=${filter}`)
+      .get(
+        `https://volunteer-pulse-backend.onrender.com/api/tasks?maxTime=${filter}`,
+      )
       .then((res) => setTasks(res.data))
       .catch((err) => console.error(err));
   }, [filter]);
@@ -37,7 +39,10 @@ function VolunteerApp() {
       : { email, password };
 
     try {
-      const res = await axios.post(`http://localhost:5001${endpoint}`, payload);
+      const res = await axios.post(
+        `https://volunteer-pulse-backend.onrender.com${endpoint}`,
+        payload,
+      );
       if (isRegistering) {
         setIsRegistering(false); // Switch to login after signup
         setError("Account created! Please log in.");
