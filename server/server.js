@@ -117,6 +117,10 @@ app.post("/api/login", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5001;
+// Health check route for the pinger
+app.get("/", (req, res) => {
+  res.status(200).send("VolunteerPulse Server is Healthy and Awake!");
+});
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
