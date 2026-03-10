@@ -133,6 +133,7 @@ app.post("/api/forgot-password", async (req, res) => {
     await user.save();
 
     // UPDATED FOR PRODUCTION: Points to your Vercel App
+    // Ensure this points to your LIVE Vercel app
     const resetUrl = `https://volunteer-pulse-eight.vercel.app/reset-password/${resetToken}`;
 
     const message = `You requested a password reset for VolunteerPulse.\nPlease click this link to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`;

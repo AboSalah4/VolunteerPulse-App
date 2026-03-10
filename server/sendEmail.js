@@ -1,29 +1,24 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+
+// Initialize Resend with your new API Key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (options) => {
-  // 1. Create a transporter explicitly using IPv4 settings to bypass Render's IPv6 blocks
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    // This tells Node.js to strictly use IPv4, solving the ENETUNREACH error:
-    family: 4,
-    auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
-  // 2. Define the email options
-  const mailOptions = {
-    from: process.env.EMAIL_USERNAME,
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-  };
-
-  // 3. Actually send the email
-  await transporter.sendMail(mailOptions);
+  try {
+    await resend.emails.send({
+      // Resend requires using this 'from' address for free/unverified domains
+      from: "VolunteerPulse <onboarding@resend.dev>",
+      to: options.email,
+      subject: options.subject,
+      text: options.message,
+      // Helps you filter by project in your Resend Dashboard
+      tags: [{ name: "project", value: "volunteer-pulse" }],
+    });
+    console.log("✅ Email sent successfully via Resend API");
+  } catch (error) {
+    console.error("🔴 Resend API Error:", error);
+    throw error;
+  }
 };
 
 module.exports = sendEmail;
