@@ -1,5 +1,13 @@
 {
+  "name": "volunteer-pulse-root",
+  "version": "1.0.0",
   "dependencies": {
+    "concurrently": "^8.2.2",
     "nodemailer": "^8.0.2"
+  },
+  "scripts": {
+    "server": "cd server && node server.js",
+    "client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
   }
 }
