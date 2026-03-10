@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "dependencies": {
     "concurrently": "^8.2.2",
-    "nodemailer": "^8.0.2"
+    "nodemailer": "^8.0.2",
+    "resend": "^6.9.3"
   },
   "scripts": {
     "server": "cd server && node server.js",

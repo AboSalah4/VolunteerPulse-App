@@ -48,8 +48,8 @@ function VolunteerApp() {
     try {
       // 👇 CHANGED BACK TO LOCALHOST 👇
       const res = await axios.post(
-        `http://localhost:5001${endpoint}`,
-        isRegistering ? { name, email, password } : { email, password },
+        "https://volunteer-pulse-backend.onrender.com/api/forgot-password", // MUST point to Render!
+        { email },
       );
       if (isRegistering) {
         setIsRegistering(false);
