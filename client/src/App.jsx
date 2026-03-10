@@ -21,6 +21,9 @@ function VolunteerApp() {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // 👇 Centralized Live Backend URL 👇
+  const API_URL = "https://volunteer-pulse-backend.onrender.com";
+
   useEffect(() => {
     const path = window.location.pathname;
     if (path.includes("/reset-password/")) {
@@ -31,25 +34,24 @@ function VolunteerApp() {
     }
   }, []);
 
+  // Fetch Tasks
   useEffect(() => {
-    // Falls back to local if env variable isn't set
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
     axios
-      .get(`${apiUrl}/api/tasks?maxTime=${filter}`)
+      .get(`${API_URL}/api/tasks?maxTime=${filter}`)
       .then((res) => setTasks(res.data))
       .catch((err) => console.error(err));
   }, [filter]);
 
+  // Handle Login & Registration
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
     const endpoint = isRegistering ? "/api/register" : "/api/login";
     try {
-      // 👇 CHANGED BACK TO LOCALHOST 👇
       const res = await axios.post(
-        "https://volunteer-pulse-backend.onrender.com/api/forgot-password", // MUST point to Render!
-        { email },
+        `${API_URL}${endpoint}`,
+        isRegistering ? { name, email, password } : { email, password },
       );
       if (isRegistering) {
         setIsRegistering(false);
@@ -63,30 +65,27 @@ function VolunteerApp() {
     }
   };
 
+  // Handle Sending the Email
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
     try {
-      // 👇 CHANGED BACK TO LOCALHOST 👇
-      const res = await axios.post(
-        "http://localhost:5001/api/forgot-password",
-        { email },
-      );
+      const res = await axios.post(`${API_URL}/api/forgot-password`, { email });
       setSuccessMsg(res.data.message);
     } catch (err) {
       setError(err.response?.data?.message || "Error sending reset link");
     }
   };
 
+  // Handle Updating the Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
     try {
-      // 👇 CHANGED BACK TO LOCALHOST 👇
       const res = await axios.post(
-        `http://localhost:5001/api/reset-password/${resetToken}`,
+        `${API_URL}/api/reset-password/${resetToken}`,
         { password },
       );
       setSuccessMsg("Success! Password updated. You can now log in.");
