@@ -32,8 +32,10 @@ function VolunteerApp() {
   }, []);
 
   useEffect(() => {
+    // Falls back to local if env variable isn't set
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
     axios
-      .get(`${import.meta.env.VITE_API_URL}/api/tasks?maxTime=${filter}`)
+      .get(`${apiUrl}/api/tasks?maxTime=${filter}`)
       .then((res) => setTasks(res.data))
       .catch((err) => console.error(err));
   }, [filter]);
@@ -44,9 +46,9 @@ function VolunteerApp() {
     setSuccessMsg("");
     const endpoint = isRegistering ? "/api/register" : "/api/login";
     try {
-      // UPDATED FOR PRODUCTION: Points to Render Backend
+      // 👇 CHANGED BACK TO LOCALHOST 👇
       const res = await axios.post(
-        `https://volunteer-pulse-backend.onrender.com${endpoint}`,
+        `http://localhost:5001${endpoint}`,
         isRegistering ? { name, email, password } : { email, password },
       );
       if (isRegistering) {
@@ -66,9 +68,9 @@ function VolunteerApp() {
     setError("");
     setSuccessMsg("");
     try {
-      // UPDATED FOR PRODUCTION: Points to Render Backend
+      // 👇 CHANGED BACK TO LOCALHOST 👇
       const res = await axios.post(
-        "https://volunteer-pulse-backend.onrender.com/api/forgot-password",
+        "http://localhost:5001/api/forgot-password",
         { email },
       );
       setSuccessMsg(res.data.message);
@@ -82,9 +84,9 @@ function VolunteerApp() {
     setError("");
     setSuccessMsg("");
     try {
-      // UPDATED FOR PRODUCTION: Points to Render Backend
+      // 👇 CHANGED BACK TO LOCALHOST 👇
       const res = await axios.post(
-        `https://volunteer-pulse-backend.onrender.com/api/reset-password/${resetToken}`,
+        `http://localhost:5001/api/reset-password/${resetToken}`,
         { password },
       );
       setSuccessMsg("Success! Password updated. You can now log in.");
