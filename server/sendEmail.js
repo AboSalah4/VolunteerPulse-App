@@ -12,7 +12,8 @@ const sendEmail = async (options) => {
 
   // 2. Define the email options
   const mailOptions = {
-    from: "VolunteerPulse Support <support@volunteerpulse.com>",
+    // UPDATED: Use your actual Gmail address here
+    from: process.env.EMAIL_USERNAME,
     to: options.email,
     subject: options.subject,
     text: options.message,

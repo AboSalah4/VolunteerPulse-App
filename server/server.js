@@ -146,15 +146,16 @@ app.post("/api/forgot-password", async (req, res) => {
 
       res.status(200).json({ message: "Reset token sent to email!" });
     } catch (err) {
+      // 👇 THIS IS THE NEW TRAP TO CATCH THE SILENT ERROR 👇
+      console.error("🔴 EMAIL ERROR DETAILS:", err);
+
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
       await user.save();
 
-      return res
-        .status(500)
-        .json({
-          message: "There was an error sending the email. Try again later.",
-        });
+      return res.status(500).json({
+        message: "There was an error sending the email. Try again later.",
+      });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
