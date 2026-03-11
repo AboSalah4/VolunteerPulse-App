@@ -203,6 +203,7 @@ body {
 
 /* --- TASK CARD DESIGN --- */
 .task-card {
+  position: relative;
   background: var(--card-bg);
   border-radius: 12px;
   padding: 25px;
@@ -517,15 +518,22 @@ body {
 }
 /* Save Heart Button Styling */
 .heart-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+  position: absolute !important;
+  top: 15px !important;
+  right: 15px !important;
+  background-color: transparent !important; /* Kills the blue background */
+  border: none !important;
+  width: auto !important; /* Stops it from stretching across the card */
+  padding: 0 !important;
+  font-size: 1.5rem !important;
   cursor: pointer;
-  z-index: 5;
-  transition: transform 0.2s;
+  z-index: 10;
+  box-shadow: none !important; /* Removes any shadow */
+  transition: transform 0.2s ease;
+}
+.heart-btn:hover {
+  transform: scale(1.2);
+  background-color: transparent !important; /* Ensures no background appears on hover */
 }
 
 /* --- SAVED FILTER BUTTON FIX --- */
