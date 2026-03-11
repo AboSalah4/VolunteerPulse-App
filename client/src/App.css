@@ -528,17 +528,39 @@ body {
   transition: transform 0.2s;
 }
 
-.heart-btn:hover {
-  transform: scale(1.2);
-}
-
+/* --- SAVED FILTER BUTTON FIX --- */
 .save-filter-btn {
-  margin-left: auto; /* Push to the right */
+  margin-left: auto; /* Keeps it on the right */
   border: 2px solid #ef4444 !important;
   color: #ef4444 !important;
+  background: white;
+
+  /* 👇 Match the height of List/Map buttons 👇 */
+  padding: 0 15px !important;
+  height: 40px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-filter-btn:hover {
+  background-color: #fef2f2;
 }
 
 .save-filter-btn.active {
   background-color: #ef4444 !important;
   color: white !important;
+}
+
+/* Ensure the container doesn't stretch weirdly */
+.view-toggle {
+  display: flex;
+  align-items: center; /* Vertically centers all buttons in the row */
+  gap: 10px;
+  margin-bottom: 20px;
 }
