@@ -26,9 +26,13 @@ function VolunteerApp() {
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [error, setError] = useState("");
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+
+  // 👇 RESTORED: State for profile picture upload loading
+  const [uploading, setUploading] = useState(false);
 
   const AVAILABLE_CATEGORIES = [
     "Education",
@@ -53,6 +57,7 @@ function VolunteerApp() {
 
   const handleAuth = async (e) => {
     e.preventDefault();
+    setError("");
     const email = e.target.email.value;
     const password = e.target.password.value;
     const endpoint = isRegistering ? "/api/register" : "/api/login";
@@ -70,7 +75,33 @@ function VolunteerApp() {
         setShowLogin(false);
       }
     } catch (err) {
-      alert("Auth failed");
+      setError("Auth failed");
+    }
+  };
+
+  // 👇 RESTORED: Cloudinary Upload Logic for Profile Picture
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("email", user.email);
+    formData.append("image", file);
+    setUploading(true);
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/upload-profile-pic`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      const timestampedUrl = `${res.data.url}?t=${Date.now()}`;
+      login({ ...user, profilePic: timestampedUrl });
+      setSuccessMsg("Picture updated!");
+      setTimeout(() => setSuccessMsg(""), 2000);
+    } catch (err) {
+      console.error("Upload failed", err);
+      setError("Upload failed");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -153,14 +184,32 @@ function VolunteerApp() {
         <div className="header-center">
           {user && (
             <div className="user-profile-header">
-              <img
-                src={
-                  user.profilePic ||
-                  `https://ui-avatars.com/api/?name=${user.name}`
-                }
-                className="profile-pic-nav"
-                alt="Profile"
-              />
+              {/* 👇 RESTORED: profile-pic-container with upload overlay label */}
+              <div className="profile-pic-container">
+                <img
+                  src={
+                    user.profilePic ||
+                    `https://ui-avatars.com/api/?name=${user.name}`
+                  }
+                  className="profile-pic-nav"
+                  alt="Profile"
+                />
+                <label className="upload-label">
+                  {uploading ? (
+                    "..."
+                  ) : (
+                    <svg viewBox="0 0 512 512" width="12px" height="12px">
+                      <path d="M512 144v288c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V144c0-26.5 21.5-48 48-48h88l12.3-32.9c7-18.6 24.8-31.1 44.8-31.1h131.8c20 0 37.8 12.5 44.8 31.1L376 96h88c26.5 0 48 21.5 48 48zM256 160c-70.7 0-128 57.3-128 128s57.3 128 128 128s128-57.3 128-128s-57.3-128-128-128zm0 192c-35.3 0-64-28.7-64-64s28.7-64 64-64s64 28.7 64 64s-28.7 64-64 64z" />
+                    </svg>
+                  )}
+                  <input
+                    type="file"
+                    onChange={handleImageUpload}
+                    hidden
+                    accept="image/*"
+                  />
+                </label>
+              </div>
               <span>
                 Welcome, <strong>{user.name}</strong>!
               </span>
@@ -183,6 +232,7 @@ function VolunteerApp() {
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
+            <h2>{isRegistering ? "Register" : "Login"}</h2>
             <form onSubmit={handleAuth}>
               {isRegistering && (
                 <input name="name" type="text" placeholder="Name" required />
@@ -206,7 +256,6 @@ function VolunteerApp() {
       )}
 
       <div className="main-content">
-        {/* 👇 RESTORED: Personalize Feed Section */}
         {user && (
           <div className="interests-section">
             <h3>Personalize Your Feed</h3>
@@ -292,13 +341,13 @@ function VolunteerApp() {
                 <h3>{task.title}</h3>
                 <p className="org-name">{task.organization}</p>
                 <p className="task-address">📍 {task.address}</p>
+                <span className="category-tag">{task.category}</span>
                 <div className="badge-container">
                   <span className="duration-badge macro">
                     ⏱ {formatDuration(task.duration)}
                   </span>
                 </div>
 
-                {/* 👇 FIXED: Removed 'disabled' so users can click to un-apply */}
                 <button
                   className={
                     user?.appliedTasks?.includes(task._id)
@@ -340,7 +389,6 @@ function VolunteerApp() {
                     >
                       {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
                     </button>
-                    {/* 👇 FIXED: Removed 'disabled' here too */}
                     <button
                       className={
                         user?.appliedTasks?.includes(task._id)
