@@ -34,6 +34,7 @@ function VolunteerApp() {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [uploading, setUploading] = useState(false);
+
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [viewMode, setViewMode] = useState("list");
 
@@ -69,32 +70,22 @@ function VolunteerApp() {
       );
       if (isRegistering) {
         setIsRegistering(false);
-        setSuccessMsg("Account created! Please log in.");
+        setSuccessMsg("Account created!");
       } else {
         login(res.data.user);
         setShowLogin(false);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "An error occurred");
+      setError("Auth failed");
     }
   };
 
-  // 👈 NEW: Real Application Logic
-  const handleApply = async (taskId) => {
-    if (!user) {
-      setShowLogin(true);
-      return;
-    }
-    try {
-      const res = await axios.post(`${API_URL}/api/apply-task`, {
-        email: user.email,
-        taskId,
-      });
-      login({ ...user, appliedTasks: res.data.appliedTasks });
-      setSuccessMsg("Application submitted!");
-      setTimeout(() => setSuccessMsg(""), 3000);
-    } catch (err) {
-      setError("Failed to apply.");
+  // 👇 RESTORED: This makes the interest chips clickable again!
+  const toggleInterest = (category) => {
+    if (selectedInterests.includes(category)) {
+      setSelectedInterests(selectedInterests.filter((c) => c !== category));
+    } else {
+      setSelectedInterests([...selectedInterests, category]);
     }
   };
 
@@ -106,9 +97,27 @@ function VolunteerApp() {
       });
       login({ ...user, interests: res.data.interests });
       setSuccessMsg("Interests saved!");
-      setTimeout(() => setSuccessMsg(""), 3000);
+      setTimeout(() => setSuccessMsg(""), 2000);
     } catch (err) {
-      setError("Failed to save.");
+      setError("Save failed");
+    }
+  };
+
+  const handleApply = async (taskId) => {
+    if (!user) {
+      setShowLogin(true);
+      return;
+    }
+    try {
+      const res = await axios.post(`${API_URL}/api/apply-task`, {
+        email: user.email,
+        taskId,
+      });
+      login({ ...user, appliedTasks: res.data.appliedTasks });
+      setSuccessMsg("Applied!");
+      setTimeout(() => setSuccessMsg(""), 2000);
+    } catch (err) {
+      setError("Apply failed");
     }
   };
 
@@ -162,7 +171,50 @@ function VolunteerApp() {
         </div>
       </header>
 
-      {/* LOGIN MODAL (Skipped for brevity, keep your existing logic) */}
+      {showLogin && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>{isRegistering ? "Register" : "Login"}</h2>
+            <form onSubmit={handleAuth}>
+              {isRegistering && (
+                <input
+                  type="text"
+                  placeholder="Name"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              )}
+              <input
+                type="email"
+                placeholder="Email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button type="submit" className="submit-btn">
+                {isRegistering ? "Sign Up" : "Log In"}
+              </button>
+            </form>
+            <p
+              className="toggle-text"
+              onClick={() => setIsRegistering(!isRegistering)}
+            >
+              {isRegistering ? "Back to Login" : "Need an account? Register"}
+            </p>
+            <button className="close-btn" onClick={() => setShowLogin(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="main-content">
         {user && (
@@ -182,8 +234,10 @@ function VolunteerApp() {
             <button className="save-interests-btn" onClick={saveInterests}>
               Save Interests
             </button>
-            {successMsg && (
-              <span className="success-inline">✓ {successMsg}</span>
+            {successMsg === "Interests saved!" && (
+              <span style={{ color: "green", marginLeft: "10px" }}>
+                ✓ Saved!
+              </span>
             )}
           </div>
         )}
@@ -225,10 +279,8 @@ function VolunteerApp() {
                 )}
                 <h3>{task.title}</h3>
                 <p className="org-name">{task.organization}</p>
-                {/* 👈 NEW: Address Display */}
-                <p className="task-address">
-                  📍 {task.address || "Location TBD"}
-                </p>
+                {/* 👇 FIXED: Using task.address correctly now */}
+                <p className="task-address">📍 {task.address}</p>
                 <span className="category-tag">{task.category}</span>
                 <div className="badge-container">
                   <span className="duration-badge macro">
@@ -236,7 +288,6 @@ function VolunteerApp() {
                   </span>
                 </div>
 
-                {/* 👈 NEW: Application Toggle Button */}
                 <button
                   className={
                     user?.appliedTasks?.includes(task._id)
@@ -268,7 +319,6 @@ function VolunteerApp() {
                     <br />
                     {task.organization}
                     <br />
-                    {/* 👈 NEW: Address in Popup */}
                     <span style={{ fontSize: "12px", color: "#666" }}>
                       {task.address}
                     </span>

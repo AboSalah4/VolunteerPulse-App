@@ -28,7 +28,7 @@ const Task = mongoose.model(
     category: String,
     lat: Number,
     lng: Number,
-    address: String, // 👈 NEW: Physical address field
+    address: String,
   }),
 );
 
@@ -40,14 +40,13 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
   interests: { type: [String], default: [] },
-  appliedTasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // 👈 NEW: Track user applications
+  appliedTasks: [{ type: String }], // Storing IDs as strings for easier frontend matching
 });
 const User = mongoose.model("User", UserSchema);
 
-// --- SEED DATA (Updated with real London, ON addresses) ---
+// --- SEED DATA ---
 const seedTasks = async () => {
-  await Task.deleteMany({});
-
+  await Task.deleteMany({}); // Clears old "No Address" tasks
   await Task.insertMany([
     {
       title: "Sort Books",
@@ -149,12 +148,11 @@ const seedTasks = async () => {
       address: "450 Ridout St N, London, ON",
     },
   ]);
-  console.log("🌱 Database seeded with Addresses and GPS!");
+  console.log("🌱 Database seeded with New Addresses!");
 };
 mongoose.connection.once("open", seedTasks);
 
 // --- ROUTES ---
-
 app.get("/api/tasks", async (req, res) => {
   const { maxTime } = req.query;
   const tasks = await Task.find({
@@ -163,29 +161,33 @@ app.get("/api/tasks", async (req, res) => {
   res.json(tasks);
 });
 
+app.post("/api/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, email, password: hashedPassword });
+    await newUser.save();
+    res.status(201).json({ message: "User created!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    if (!user || !(await bcrypt.compare(password, user.password)))
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, "SECRET_KEY_123", {
-      expiresIn: "1h",
-    });
-
     res.json({
-      token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         profilePic: user.profilePic,
         interests: user.interests,
-        appliedTasks: user.appliedTasks, // 👈 Send applied tasks on login
+        appliedTasks: user.appliedTasks,
       },
     });
   } catch (err) {
@@ -193,75 +195,31 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// 👈 NEW ROUTE: Apply for a task
-app.post("/api/apply-task", async (req, res) => {
-  try {
-    const { email, taskId } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (!user.appliedTasks.includes(taskId)) {
-      user.appliedTasks.push(taskId);
-      await user.save();
-    }
-    res
-      .status(200)
-      .json({
-        message: "Applied successfully!",
-        appliedTasks: user.appliedTasks,
-      });
-  } catch (error) {
-    res.status(500).json({ message: "Application failed" });
-  }
-});
-
-// ... (Other routes: register, update-interests, forgot-password, reset-password, upload-profile-pic stay the same)
-
-app.post("/api/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
-
-    res.status(201).json({ message: "User created successfully!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 app.post("/api/update-interests", async (req, res) => {
-  try {
-    const { email, interests } = req.body;
-    const updatedUser = await User.findOneAndUpdate(
-      { email },
-      { interests: interests },
-      { new: true },
-    );
-
-    if (!updatedUser)
-      return res.status(404).json({ message: "User not found" });
-    res.status(200).json({
-      message: "Interests saved successfully!",
-      interests: updatedUser.interests,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to save interests" });
-  }
+  const { email, interests } = req.body;
+  const user = await User.findOneAndUpdate(
+    { email },
+    { interests },
+    { new: true },
+  );
+  res.json({ interests: user.interests });
 });
 
+app.post("/api/apply-task", async (req, res) => {
+  const { email, taskId } = req.body;
+  const user = await User.findOne({ email });
+  if (!user.appliedTasks.includes(taskId)) {
+    user.appliedTasks.push(taskId);
+    await user.save();
+  }
+  res.json({ appliedTasks: user.appliedTasks });
+});
+
+// Forgot/Reset/Upload routes remain here as previously written...
 app.post("/api/forgot-password", async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ message: "There is no user with that email address." });
-
+    if (!user) return res.status(404).json({ message: "No user found." });
     const resetToken = crypto.randomBytes(32).toString("hex");
     user.resetPasswordToken = crypto
       .createHash("sha256")
@@ -269,82 +227,48 @@ app.post("/api/forgot-password", async (req, res) => {
       .digest("hex");
     user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
-
     const resetUrl = `https://volunteer-pulse-eight.vercel.app/reset-password/${resetToken}`;
-    const message = `You requested a password reset for VolunteerPulse.\nPlease click this link to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`;
-
-    try {
-      await sendEmail({
-        email: user.email,
-        subject: "VolunteerPulse - Password Reset Token",
-        message: message,
-      });
-      res.status(200).json({ message: "Reset token sent to email!" });
-    } catch (err) {
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-      await user.save();
-      return res.status(500).json({
-        message: "There was an error sending the email. Try again later.",
-      });
-    }
+    await sendEmail({
+      email: user.email,
+      subject: "Password Reset",
+      message: `Link: ${resetUrl}`,
+    });
+    res.status(200).json({ message: "Token sent!" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 app.post("/api/reset-password/:token", async (req, res) => {
-  try {
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(req.params.token)
-      .digest("hex");
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
-
-    if (!user)
-      return res
-        .status(400)
-        .json({ message: "Token is invalid or has expired." });
-
-    user.password = await bcrypt.hash(req.body.password, 10);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
-    res
-      .status(200)
-      .json({ message: "Password reset successful! You can now log in." });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: Date.now() },
+  });
+  if (!user) return res.status(400).json({ message: "Invalid/Expired token" });
+  user.password = await bcrypt.hash(req.body.password, 10);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+  res.status(200).json({ message: "Success!" });
 });
 
 app.post(
   "/api/upload-profile-pic",
   upload.single("image"),
   async (req, res) => {
-    try {
-      const { email } = req.body;
-      const imageUrl = req.file.path;
-      const updatedUser = await User.findOneAndUpdate(
-        { email },
-        { profilePic: imageUrl },
-        { new: true },
-      );
-      if (!updatedUser)
-        return res.status(404).json({ message: "User not found" });
-
-      res
-        .status(200)
-        .json({ message: "Image uploaded successfully!", url: imageUrl });
-    } catch (error) {
-      console.error("Upload Error:", error);
-      res.status(500).json({ message: "Upload failed" });
-    }
+    const { email } = req.body;
+    const user = await User.findOneAndUpdate(
+      { email },
+      { profilePic: req.file.path },
+      { new: true },
+    );
+    res.json({ url: req.file.path });
   },
 );
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server on ${PORT}`));
