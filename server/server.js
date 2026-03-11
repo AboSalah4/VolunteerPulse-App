@@ -45,10 +45,11 @@ const User = mongoose.model("User", UserSchema);
 
 // --- SEED DATA ---
 const seedTasks = async () => {
-  // 👇 We clear the old tasks so everyone gets the new categories!
+  // Clear the old tasks first
   await Task.deleteMany({});
 
   await Task.insertMany([
+    // Education & Tutoring
     {
       title: "Sort Books",
       organization: "Public Library",
@@ -56,11 +57,27 @@ const seedTasks = async () => {
       category: "Education",
     },
     {
+      title: "Online Reading Tutor",
+      organization: "Global Literacy",
+      duration: 60,
+      category: "Education",
+    },
+
+    // Environment
+    {
       title: "Social Media Post",
       organization: "EcoGroup",
       duration: 15,
       category: "Environment",
     },
+    {
+      title: "Tree Planting Day",
+      organization: "GreenCity",
+      duration: 240,
+      category: "Environment",
+    },
+
+    // Animals
     {
       title: "Walk Dogs",
       organization: "Animal Shelter",
@@ -68,19 +85,47 @@ const seedTasks = async () => {
       category: "Animals",
     },
     {
+      title: "Cat Socialization",
+      organization: "Kitty Haven",
+      duration: 120,
+      category: "Animals",
+    },
+
+    // Community
+    {
       title: "Event Setup",
       organization: "Community Center",
       duration: 180,
       category: "Community",
     },
     {
+      title: "Food Bank Sorter",
+      organization: "Metro Food Bank",
+      duration: 120,
+      category: "Community",
+    },
+
+    // Tech
+    {
       title: "Hackathon Mentor",
       organization: "Tech Non-Profit",
       duration: 1440,
       category: "Tech",
     },
+    {
+      title: "Website Bug Fix",
+      organization: "Open Source Project",
+      duration: 300,
+      category: "Tech",
+    },
+    {
+      title: "Database Cleanup",
+      organization: "Charity Tech",
+      duration: 43200,
+      category: "Tech",
+    }, // 30 Days
   ]);
-  console.log("🌱 Database seeded with Categories!");
+  console.log("🌱 Database seeded with expanded Task list!");
 };
 mongoose.connection.once("open", seedTasks);
 
@@ -155,12 +200,10 @@ app.post("/api/update-interests", async (req, res) => {
 
     if (!updatedUser)
       return res.status(404).json({ message: "User not found" });
-    res
-      .status(200)
-      .json({
-        message: "Interests saved successfully!",
-        interests: updatedUser.interests,
-      });
+    res.status(200).json({
+      message: "Interests saved successfully!",
+      interests: updatedUser.interests,
+    });
   } catch (error) {
     res.status(500).json({ message: "Failed to save interests" });
   }
@@ -197,11 +240,9 @@ app.post("/api/forgot-password", async (req, res) => {
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
       await user.save();
-      return res
-        .status(500)
-        .json({
-          message: "There was an error sending the email. Try again later.",
-        });
+      return res.status(500).json({
+        message: "There was an error sending the email. Try again later.",
+      });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
