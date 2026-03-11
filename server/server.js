@@ -20,18 +20,20 @@ mongoose
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // --- MODELS ---
-// Task Model (👇 Added "category")
+// Task Model (👇 Added lat and lng for Map support)
 const Task = mongoose.model(
   "Task",
   new mongoose.Schema({
     title: String,
     organization: String,
     duration: Number,
-    category: String, // 👈 NEW FIELD
+    category: String,
+    lat: Number, // 👈 Latitude
+    lng: Number, // 👈 Longitude
   }),
 );
 
-// User Model (👇 Added "interests" array)
+// User Model
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -39,93 +41,38 @@ const UserSchema = new mongoose.Schema({
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
-  interests: { type: [String], default: [] }, // 👈 NEW FIELD
+  interests: { type: [String], default: [] }, 
 });
 const User = mongoose.model("User", UserSchema);
 
 // --- SEED DATA ---
 const seedTasks = async () => {
-  // Clear the old tasks first
+  // Clear the old tasks to apply the new GPS coordinates
   await Task.deleteMany({});
 
   await Task.insertMany([
     // Education & Tutoring
-    {
-      title: "Sort Books",
-      organization: "Public Library",
-      duration: 15,
-      category: "Education",
-    },
-    {
-      title: "Online Reading Tutor",
-      organization: "Global Literacy",
-      duration: 60,
-      category: "Education",
-    },
+    { title: "Sort Books", organization: "Public Library", duration: 15, category: "Education", lat: 42.9850, lng: -81.2460 },
+    { title: "Online Reading Tutor", organization: "Global Literacy", duration: 60, category: "Education", lat: 42.9820, lng: -81.2510 },
 
     // Environment
-    {
-      title: "Social Media Post",
-      organization: "EcoGroup",
-      duration: 15,
-      category: "Environment",
-    },
-    {
-      title: "Tree Planting Day",
-      organization: "GreenCity",
-      duration: 240,
-      category: "Environment",
-    },
+    { title: "Social Media Post", organization: "EcoGroup", duration: 15, category: "Environment", lat: 42.9800, lng: -81.2500 },
+    { title: "Tree Planting Day", organization: "GreenCity", duration: 240, category: "Environment", lat: 42.9750, lng: -81.2350 },
 
     // Animals
-    {
-      title: "Walk Dogs",
-      organization: "Animal Shelter",
-      duration: 45,
-      category: "Animals",
-    },
-    {
-      title: "Cat Socialization",
-      organization: "Kitty Haven",
-      duration: 120,
-      category: "Animals",
-    },
+    { title: "Walk Dogs", organization: "Animal Shelter", duration: 45, category: "Animals", lat: 42.9900, lng: -81.2400 },
+    { title: "Cat Socialization", organization: "Kitty Haven", duration: 120, category: "Animals", lat: 42.9920, lng: -81.2450 },
 
     // Community
-    {
-      title: "Event Setup",
-      organization: "Community Center",
-      duration: 180,
-      category: "Community",
-    },
-    {
-      title: "Food Bank Sorter",
-      organization: "Metro Food Bank",
-      duration: 120,
-      category: "Community",
-    },
+    { title: "Event Setup", organization: "Community Center", duration: 180, category: "Community", lat: 42.9860, lng: -81.2380 },
+    { title: "Food Bank Sorter", organization: "Metro Food Bank", duration: 120, category: "Community", lat: 42.9810, lng: -81.2300 },
 
     // Tech
-    {
-      title: "Hackathon Mentor",
-      organization: "Tech Non-Profit",
-      duration: 1440,
-      category: "Tech",
-    },
-    {
-      title: "Website Bug Fix",
-      organization: "Open Source Project",
-      duration: 300,
-      category: "Tech",
-    },
-    {
-      title: "Database Cleanup",
-      organization: "Charity Tech",
-      duration: 43200,
-      category: "Tech",
-    }, // 30 Days
+    { title: "Hackathon Mentor", organization: "Tech Non-Profit", duration: 1440, category: "Tech", lat: 42.9880, lng: -81.2550 },
+    { title: "Website Bug Fix", organization: "Open Source Project", duration: 300, category: "Tech", lat: 42.9840, lng: -81.2600 },
+    { title: "Database Cleanup", organization: "Charity Tech", duration: 43200, category: "Tech", lat: 42.9870, lng: -81.2480 }, 
   ]);
-  console.log("🌱 Database seeded with expanded Task list!");
+  console.log("🌱 Database seeded with Map Coordinates!");
 };
 mongoose.connection.once("open", seedTasks);
 
@@ -180,7 +127,7 @@ app.post("/api/login", async (req, res) => {
         name: user.name,
         email: user.email,
         profilePic: user.profilePic,
-        interests: user.interests, // 👈 Tells React about interests on login
+        interests: user.interests,
       },
     });
   } catch (err) {
@@ -188,7 +135,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// 4. Update Interests Route (👈 NEW ROUTE FOR STEP 2)
+// 4. Update Interests Route 
 app.post("/api/update-interests", async (req, res) => {
   try {
     const { email, interests } = req.body;
