@@ -23,8 +23,28 @@ function VolunteerApp() {
 
   const [uploading, setUploading] = useState(false);
 
-  // 👇 READY FOR PRODUCTION: Pointing to your live Render server!
+  // 👇 NEW: State for tracking which interests the user clicks
+  const [selectedInterests, setSelectedInterests] = useState([]);
+
+  // These match the categories we just seeded in the database
+  const AVAILABLE_CATEGORIES = [
+    "Education",
+    "Environment",
+    "Animals",
+    "Community",
+    "Tech",
+  ];
+
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
+
+  // When a user logs in, load their previously saved interests into the UI
+  useEffect(() => {
+    if (user && user.interests) {
+      setSelectedInterests(user.interests);
+    } else {
+      setSelectedInterests([]);
+    }
+  }, [user]);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -70,7 +90,6 @@ function VolunteerApp() {
     if (!file) return;
 
     const formData = new FormData();
-    // Email appended before the image to ensure the backend reads it correctly
     formData.append("email", user.email);
     formData.append("image", file);
 
@@ -84,7 +103,6 @@ function VolunteerApp() {
         },
       );
 
-      // Cache-busting timestamp to force browser refresh
       const cleanUrl = res.data.url;
       const timestampedUrl = `${cleanUrl}?t=${Date.now()}`;
 
@@ -95,6 +113,33 @@ function VolunteerApp() {
       setError("Failed to upload image.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  // 👇 NEW: Toggle interest button logic
+  const toggleInterest = (category) => {
+    if (selectedInterests.includes(category)) {
+      setSelectedInterests(selectedInterests.filter((c) => c !== category));
+    } else {
+      setSelectedInterests([...selectedInterests, category]);
+    }
+  };
+
+  // 👇 NEW: Save interests to database
+  const saveInterests = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/api/update-interests`, {
+        email: user.email,
+        interests: selectedInterests,
+      });
+      // Update the user context so the app knows about the new interests immediately
+      login({ ...user, interests: res.data.interests });
+      setSuccessMsg("Interests saved successfully!");
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError("Failed to save interests.");
     }
   };
 
@@ -133,6 +178,14 @@ function VolunteerApp() {
     if (mins < 1440) return `${mins / 60} Hours`;
     return `${mins / 1440} Days`;
   };
+
+  // 👇 NEW: Smart Sorting Logic
+  // This takes the tasks and sorts them so matches appear at the top
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const aMatch = user?.interests?.includes(a.category) ? 1 : 0;
+    const bMatch = user?.interests?.includes(b.category) ? 1 : 0;
+    return bMatch - aMatch;
+  });
 
   return (
     <div className="container">
@@ -196,7 +249,7 @@ function VolunteerApp() {
         </div>
       </header>
 
-      {/* MODALS SECTION */}
+      {/* MODALS */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -210,7 +263,11 @@ function VolunteerApp() {
                     : "Login"}
             </h2>
             {error && <p style={{ color: "red" }}>{error}</p>}
-            {successMsg && <p style={{ color: "green" }}>{successMsg}</p>}
+            {successMsg && (
+              <p style={{ color: "green", marginBottom: "10px" }}>
+                {successMsg}
+              </p>
+            )}
 
             {isResetMode ? (
               <form onSubmit={handleResetPassword}>
@@ -289,8 +346,40 @@ function VolunteerApp() {
         </div>
       )}
 
-      {/* TASK SECTION */}
       <div className="main-content">
+        {/* 👇 NEW: Interests Selector UI (Only visible to logged-in users) 👇 */}
+        {user && (
+          <div className="interests-section">
+            <h3>Personalize Your Feed</h3>
+            <p>Select causes you care about to see recommended tasks first:</p>
+            <div className="chips-container">
+              {AVAILABLE_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  className={`interest-chip ${selectedInterests.includes(cat) ? "active" : ""}`}
+                  onClick={() => toggleInterest(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <button className="save-interests-btn" onClick={saveInterests}>
+              Save Interests
+            </button>
+            {successMsg === "Interests saved successfully!" && (
+              <span
+                style={{
+                  color: "green",
+                  marginLeft: "10px",
+                  fontWeight: "bold",
+                }}
+              >
+                ✓ Saved!
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="filter-section">
           <label>I have available time:</label>
           <select
@@ -303,14 +392,27 @@ function VolunteerApp() {
             <option value="999999">Show Everything</option>
           </select>
         </div>
+
         <div className="task-list">
-          {tasks.map((task) => (
+          {/* 👇 We now map over sortedTasks instead of just tasks 👇 */}
+          {sortedTasks.map((task) => (
             <div key={task._id} className="task-card">
+              {/* 👇 Adds a ⭐ if the task matches the user's interests 👇 */}
+              {user?.interests?.includes(task.category) && (
+                <div className="recommended-badge">⭐ Recommended Match</div>
+              )}
+
               <h3>{task.title}</h3>
-              <p>{task.organization}</p>
-              <span className="duration-badge">
-                ⏱ {formatDuration(task.duration)}
-              </span>
+              <p className="org-name">{task.organization}</p>
+
+              {/* Shows the category tag */}
+              <span className="category-tag">{task.category}</span>
+
+              <div className="badge-container">
+                <span className="duration-badge macro">
+                  ⏱ {formatDuration(task.duration)}
+                </span>
+              </div>
               <button
                 onClick={() => alert(user ? `Applied!` : "Log In first!")}
               >

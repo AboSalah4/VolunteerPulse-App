@@ -7,7 +7,7 @@ const crypto = require("crypto");
 require("dotenv").config();
 
 const sendEmail = require("./sendEmail");
-const { upload } = require("./cloudinaryConfig"); // 👈 Moved this to the top!
+const { upload } = require("./cloudinaryConfig");
 
 const app = express();
 app.use(cors());
@@ -20,44 +20,67 @@ mongoose
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // --- MODELS ---
-// Task Model
+// Task Model (👇 Added "category")
 const Task = mongoose.model(
   "Task",
   new mongoose.Schema({
     title: String,
     organization: String,
     duration: Number,
+    category: String, // 👈 NEW FIELD
   }),
 );
 
-// User Model (👈 Cleaned up and updated!)
+// User Model (👇 Added "interests" array)
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   name: { type: String, required: true },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
-  profilePic: { type: String, default: "" }, // 👈 Added the image field here
+  profilePic: { type: String, default: "" },
+  interests: { type: [String], default: [] }, // 👈 NEW FIELD
 });
 const User = mongoose.model("User", UserSchema);
 
 // --- SEED DATA ---
 const seedTasks = async () => {
-  const count = await Task.countDocuments();
-  if (count === 0) {
-    await Task.insertMany([
-      { title: "Sort Books", organization: "Public Library", duration: 15 },
-      { title: "Social Media Post", organization: "EcoGroup", duration: 15 },
-      { title: "Walk Dogs", organization: "Animal Shelter", duration: 45 },
-      { title: "Event Setup", organization: "Community Center", duration: 180 },
-      {
-        title: "Hackathon Mentor",
-        organization: "Tech Non-Profit",
-        duration: 1440,
-      },
-    ]);
-    console.log("🌱 Database seeded!");
-  }
+  // 👇 We clear the old tasks so everyone gets the new categories!
+  await Task.deleteMany({});
+
+  await Task.insertMany([
+    {
+      title: "Sort Books",
+      organization: "Public Library",
+      duration: 15,
+      category: "Education",
+    },
+    {
+      title: "Social Media Post",
+      organization: "EcoGroup",
+      duration: 15,
+      category: "Environment",
+    },
+    {
+      title: "Walk Dogs",
+      organization: "Animal Shelter",
+      duration: 45,
+      category: "Animals",
+    },
+    {
+      title: "Event Setup",
+      organization: "Community Center",
+      duration: 180,
+      category: "Community",
+    },
+    {
+      title: "Hackathon Mentor",
+      organization: "Tech Non-Profit",
+      duration: 1440,
+      category: "Tech",
+    },
+  ]);
+  console.log("🌱 Database seeded with Categories!");
 };
 mongoose.connection.once("open", seedTasks);
 
@@ -76,7 +99,6 @@ app.get("/api/tasks", async (req, res) => {
 app.post("/api/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
     const existingUser = await User.findOne({ email });
     if (existingUser)
       return res.status(400).json({ message: "User already exists" });
@@ -95,7 +117,6 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
@@ -113,7 +134,8 @@ app.post("/api/login", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        profilePic: user.profilePic, // 👈 Tells React about the image on login
+        profilePic: user.profilePic,
+        interests: user.interests, // 👈 Tells React about interests on login
       },
     });
   } catch (err) {
@@ -121,7 +143,30 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// 4. Forgot Password
+// 4. Update Interests Route (👈 NEW ROUTE FOR STEP 2)
+app.post("/api/update-interests", async (req, res) => {
+  try {
+    const { email, interests } = req.body;
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      { interests: interests },
+      { new: true },
+    );
+
+    if (!updatedUser)
+      return res.status(404).json({ message: "User not found" });
+    res
+      .status(200)
+      .json({
+        message: "Interests saved successfully!",
+        interests: updatedUser.interests,
+      });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to save interests" });
+  }
+});
+
+// 5. Forgot Password
 app.post("/api/forgot-password", async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -131,7 +176,6 @@ app.post("/api/forgot-password", async (req, res) => {
         .json({ message: "There is no user with that email address." });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-
     user.resetPasswordToken = crypto
       .createHash("sha256")
       .update(resetToken)
@@ -139,9 +183,7 @@ app.post("/api/forgot-password", async (req, res) => {
     user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    // Ensure this points to your LIVE Vercel app
     const resetUrl = `https://volunteer-pulse-eight.vercel.app/reset-password/${resetToken}`;
-
     const message = `You requested a password reset for VolunteerPulse.\nPlease click this link to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`;
 
     try {
@@ -150,32 +192,29 @@ app.post("/api/forgot-password", async (req, res) => {
         subject: "VolunteerPulse - Password Reset Token",
         message: message,
       });
-
       res.status(200).json({ message: "Reset token sent to email!" });
     } catch (err) {
-      console.error("🔴 EMAIL ERROR DETAILS:", err);
-
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
       await user.save();
-
-      return res.status(500).json({
-        message: "There was an error sending the email. Try again later.",
-      });
+      return res
+        .status(500)
+        .json({
+          message: "There was an error sending the email. Try again later.",
+        });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 5. Reset Password
+// 6. Reset Password
 app.post("/api/reset-password/:token", async (req, res) => {
   try {
     const hashedToken = crypto
       .createHash("sha256")
       .update(req.params.token)
       .digest("hex");
-
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() },
@@ -187,11 +226,9 @@ app.post("/api/reset-password/:token", async (req, res) => {
         .json({ message: "Token is invalid or has expired." });
 
     user.password = await bcrypt.hash(req.body.password, 10);
-
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
-
     res
       .status(200)
       .json({ message: "Password reset successful! You can now log in." });
@@ -200,7 +237,7 @@ app.post("/api/reset-password/:token", async (req, res) => {
   }
 });
 
-// 6. Upload Profile Picture Route (👈 Now safely independent!)
+// 7. Upload Profile Picture Route
 app.post(
   "/api/upload-profile-pic",
   upload.single("image"),
@@ -208,21 +245,17 @@ app.post(
     try {
       const { email } = req.body;
       const imageUrl = req.file.path;
-
-      // Save the URL to the user in MongoDB
       const updatedUser = await User.findOneAndUpdate(
         { email },
         { profilePic: imageUrl },
         { new: true },
       );
-
       if (!updatedUser)
         return res.status(404).json({ message: "User not found" });
 
-      res.status(200).json({
-        message: "Image uploaded successfully!",
-        url: imageUrl,
-      });
+      res
+        .status(200)
+        .json({ message: "Image uploaded successfully!", url: imageUrl });
     } catch (error) {
       console.error("Upload Error:", error);
       res.status(500).json({ message: "Upload failed" });

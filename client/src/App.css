@@ -338,3 +338,90 @@ body {
   text-decoration: underline;
   cursor: pointer;
 }
+/* --- INTERESTS UI --- */
+.interests-section {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.interests-section h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: var(--primary);
+}
+
+.interests-section p {
+  color: var(--text-light);
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.interest-chip {
+  background: #f1f5f9;
+  color: var(--text-dark);
+  border: 2px solid transparent;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.interest-chip:hover {
+  background: #e2e8f0;
+}
+
+/* When a user selects a chip, it turns blue */
+.interest-chip.active {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 2px solid #3b82f6;
+}
+
+.save-interests-btn {
+  background: var(--text-dark);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.save-interests-btn:hover {
+  background: #000000;
+}
+
+/* Task Card Category Tag & Recommended Badge */
+.category-tag {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.recommended-badge {
+  background: #fef08a;
+  color: #854d0e;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  display: inline-block;
+}
