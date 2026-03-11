@@ -23,16 +23,28 @@ function VolunteerApp() {
 
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState(999999);
+
+  // Auth & Modal State (FULLY RESTORED)
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
+  const [resetToken, setResetToken] = useState("");
+
+  // Form Data State
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+
+  // Status Messages
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  // App Features State
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
-
-  // 👇 RESTORED: State for profile picture upload loading
-  const [uploading, setUploading] = useState(false);
 
   const AVAILABLE_CATEGORIES = [
     "Education",
@@ -43,11 +55,24 @@ function VolunteerApp() {
   ];
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
+  // Check URL for reset token
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes("/reset-password/")) {
+      const token = path.split("/").pop();
+      setResetToken(token);
+      setIsResetMode(true);
+      setShowLogin(true);
+    }
+  }, []);
+
+  // Load interests on login
   useEffect(() => {
     if (user && user.interests) setSelectedInterests(user.interests);
     else setSelectedInterests([]);
   }, [user]);
 
+  // Fetch Tasks
   useEffect(() => {
     axios
       .get(`${API_URL}/api/tasks?maxTime=${filter}`)
@@ -55,31 +80,58 @@ function VolunteerApp() {
       .catch((err) => console.error(err));
   }, [filter]);
 
+  // Handlers
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    setSuccessMsg("");
     const endpoint = isRegistering ? "/api/register" : "/api/login";
     try {
-      const res = await axios.post(`${API_URL}${endpoint}`, {
-        email,
-        password,
-        name: e.target.name?.value,
-      });
+      const res = await axios.post(
+        `${API_URL}${endpoint}`,
+        isRegistering ? { name, email, password } : { email, password },
+      );
       if (isRegistering) {
         setIsRegistering(false);
-        setSuccessMsg("Registered!");
+        setSuccessMsg("Account created! Please log in.");
       } else {
         login(res.data.user);
         setShowLogin(false);
       }
     } catch (err) {
-      setError("Auth failed");
+      setError(err.response?.data?.message || "Auth failed");
     }
   };
 
-  // 👇 RESTORED: Cloudinary Upload Logic for Profile Picture
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    try {
+      const res = await axios.post(`${API_URL}/api/forgot-password`, { email });
+      setSuccessMsg(res.data.message);
+    } catch (err) {
+      setError(err.response?.data?.message || "Error sending reset link");
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    try {
+      await axios.post(`${API_URL}/api/reset-password/${resetToken}`, {
+        password,
+      });
+      setSuccessMsg("Success! Password updated. You can now log in.");
+      setIsResetMode(false);
+      setResetToken("");
+      window.history.pushState({}, "", "/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid or expired token");
+    }
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -184,7 +236,6 @@ function VolunteerApp() {
         <div className="header-center">
           {user && (
             <div className="user-profile-header">
-              {/* 👇 RESTORED: profile-pic-container with upload overlay label */}
               <div className="profile-pic-container">
                 <img
                   src={
@@ -229,60 +280,119 @@ function VolunteerApp() {
         </div>
       </header>
 
-      
+      {/* FULLY RESTORED MODAL */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>{isResetMode ? "New Password" : isForgotPassword ? "Reset Password" : isRegistering ? "Register" : "Login"}</h2>
+            <h2>
+              {isResetMode
+                ? "New Password"
+                : isForgotPassword
+                  ? "Reset Password"
+                  : isRegistering
+                    ? "Register"
+                    : "Login"}
+            </h2>
             {error && <p style={{ color: "red" }}>{error}</p>}
-            {successMsg && <p style={{ color: "green", marginBottom: "10px" }}>{successMsg}</p>}
+            {successMsg && (
+              <p style={{ color: "green", marginBottom: "10px" }}>
+                {successMsg}
+              </p>
+            )}
 
             {isResetMode ? (
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                setError(""); setSuccessMsg("");
-                try {
-                  await axios.post(`${API_URL}/api/reset-password/${resetToken}`, { password });
-                  setSuccessMsg("Success! Password updated. You can now log in.");
-                  setIsResetMode(false); setResetToken("");
-                  window.history.pushState({}, "", "/");
-                } catch (err) { setError(err.response?.data?.message || "Invalid or expired token"); }
-              }}>
-                <input type="password" placeholder="New Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                <button type="submit" className="submit-btn">Update</button>
+              <form onSubmit={handleResetPassword}>
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button type="submit" className="submit-btn">
+                  Update
+                </button>
               </form>
             ) : isForgotPassword ? (
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                setError(""); setSuccessMsg("");
-                try {
-                  const res = await axios.post(`${API_URL}/api/forgot-password`, { email });
-                  setSuccessMsg(res.data.message);
-                } catch (err) { setError(err.response?.data?.message || "Error sending reset link"); }
-              }}>
-                <input type="email" placeholder="Email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                <button type="submit" className="submit-btn">Send Link</button>
-                <p className="toggle-text" onClick={() => setIsForgotPassword(false)}>Back to Login</p>
+              <form onSubmit={handleForgotPassword}>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <button type="submit" className="submit-btn">
+                  Send Link
+                </button>
+                <p
+                  className="toggle-text"
+                  onClick={() => setIsForgotPassword(false)}
+                >
+                  Back to Login
+                </p>
               </form>
             ) : (
               <form onSubmit={handleAuth}>
-                {isRegistering && <input name="name" type="text" placeholder="Name" required />}
-                <input name="email" type="email" placeholder="Email" required />
-                <input name="password" type="password" placeholder="Password" required />
-                <button type="submit" className="submit-btn">{isRegistering ? "Sign Up" : "Log In"}</button>
+                {isRegistering && (
+                  <input
+                    name="name"
+                    type="text"
+                    placeholder="Name"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                )}
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button type="submit" className="submit-btn">
+                  {isRegistering ? "Sign Up" : "Log In"}
+                </button>
                 {!isRegistering && (
-                  <p className="toggle-text" onClick={() => setIsForgotPassword(true)}>Forgot Password?</p>
+                  <p
+                    className="toggle-text"
+                    onClick={() => setIsForgotPassword(true)}
+                  >
+                    Forgot Password?
+                  </p>
                 )}
               </form>
             )}
-            
+
             {!isResetMode && !isForgotPassword && (
-              <p className="toggle-text" onClick={() => setIsRegistering(!isRegistering)}>
+              <p
+                className="toggle-text"
+                onClick={() => setIsRegistering(!isRegistering)}
+              >
                 {isRegistering ? "Back to Login" : "Need an account? Register"}
               </p>
             )}
-            
-            <button className="close-btn" onClick={() => { setShowLogin(false); setIsForgotPassword(false); setIsRegistering(false); }}>Close</button>
+
+            <button
+              className="close-btn"
+              onClick={() => {
+                setShowLogin(false);
+                setIsForgotPassword(false);
+                setIsRegistering(false);
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
@@ -409,6 +519,10 @@ function VolunteerApp() {
                     <strong>{task.title}</strong>
                     <br />
                     {task.organization}
+                    <br />
+                    <span style={{ fontSize: "12px", color: "#666" }}>
+                      {task.address}
+                    </span>
                     <br />
                     <button
                       onClick={() => handleSaveTask(task._id)}
