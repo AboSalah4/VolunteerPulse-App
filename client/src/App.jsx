@@ -28,10 +28,15 @@ function VolunteerApp() {
   const [successMsg, setSuccessMsg] = useState("");
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [viewMode, setViewMode] = useState("list");
-
-  // 👇 NEW: State to show only saved tasks
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
+  const AVAILABLE_CATEGORIES = [
+    "Education",
+    "Environment",
+    "Animals",
+    "Community",
+    "Tech",
+  ];
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
   useEffect(() => {
@@ -69,7 +74,28 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 NEW: Handle Saving Tasks
+  const toggleInterest = (category) => {
+    if (selectedInterests.includes(category)) {
+      setSelectedInterests(selectedInterests.filter((c) => c !== category));
+    } else {
+      setSelectedInterests([...selectedInterests, category]);
+    }
+  };
+
+  const saveInterests = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/api/update-interests`, {
+        email: user.email,
+        interests: selectedInterests,
+      });
+      login({ ...user, interests: res.data.interests });
+      setSuccessMsg("Interests saved!");
+      setTimeout(() => setSuccessMsg(""), 2000);
+    } catch (err) {
+      console.error("Save failed");
+    }
+  };
+
   const handleSaveTask = async (taskId) => {
     if (!user) {
       setShowLogin(true);
@@ -108,7 +134,6 @@ function VolunteerApp() {
     return `${mins / 1440} Days`;
   };
 
-  // Filter tasks if "Show Saved Only" is active
   const filteredTasks = showSavedOnly
     ? tasks.filter((t) => user?.savedTasks?.includes(t._id))
     : tasks;
@@ -181,6 +206,38 @@ function VolunteerApp() {
       )}
 
       <div className="main-content">
+        {/* 👇 RESTORED: Personalize Feed Section */}
+        {user && (
+          <div className="interests-section">
+            <h3>Personalize Your Feed</h3>
+            <div className="chips-container">
+              {AVAILABLE_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  className={`interest-chip ${selectedInterests.includes(cat) ? "active" : ""}`}
+                  onClick={() => toggleInterest(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <button className="save-interests-btn" onClick={saveInterests}>
+              Save Interests
+            </button>
+            {successMsg === "Interests saved!" && (
+              <span
+                style={{
+                  color: "green",
+                  marginLeft: "10px",
+                  fontWeight: "bold",
+                }}
+              >
+                ✓ Saved!
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="view-toggle">
           <button
             className={viewMode === "list" ? "active" : ""}
@@ -195,7 +252,6 @@ function VolunteerApp() {
             🗺️ Map
           </button>
 
-          {/* 👇 NEW: Toggle for Saved Tasks */}
           {user && (
             <button
               className={`save-filter-btn ${showSavedOnly ? "active" : ""}`}
@@ -223,7 +279,6 @@ function VolunteerApp() {
           <div className="task-list">
             {sortedTasks.map((task) => (
               <div key={task._id} className="task-card">
-                {/* 👇 NEW: Save/Heart Button */}
                 <button
                   className={`heart-btn ${user?.savedTasks?.includes(task._id) ? "saved" : ""}`}
                   onClick={() => handleSaveTask(task._id)}
@@ -243,6 +298,7 @@ function VolunteerApp() {
                   </span>
                 </div>
 
+                {/* 👇 FIXED: Removed 'disabled' so users can click to un-apply */}
                 <button
                   className={
                     user?.appliedTasks?.includes(task._id)
@@ -250,7 +306,6 @@ function VolunteerApp() {
                       : "apply-btn"
                   }
                   onClick={() => handleApply(task._id)}
-                  disabled={user?.appliedTasks?.includes(task._id)}
                 >
                   {user?.appliedTasks?.includes(task._id)
                     ? "Applied ✓"
@@ -285,6 +340,7 @@ function VolunteerApp() {
                     >
                       {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
                     </button>
+                    {/* 👇 FIXED: Removed 'disabled' here too */}
                     <button
                       className={
                         user?.appliedTasks?.includes(task._id)
@@ -292,7 +348,6 @@ function VolunteerApp() {
                           : "apply-btn-small"
                       }
                       onClick={() => handleApply(task._id)}
-                      disabled={user?.appliedTasks?.includes(task._id)}
                     >
                       {user?.appliedTasks?.includes(task._id)
                         ? "Applied ✓"

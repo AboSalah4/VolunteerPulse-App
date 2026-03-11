@@ -474,14 +474,19 @@ body {
 
 /* Applied Button State */
 .applied-btn {
-  background-color: #22c55e !important; /* Green */
+  background-color: #22c55e !important;
   color: white;
-  cursor: default;
+  cursor: pointer; /* 👈 Changed from default to pointer */
   border: none;
   width: 100%;
   padding: 12px;
   border-radius: 8px;
   font-weight: bold;
+  transition: opacity 0.2s;
+}
+
+.applied-btn:hover {
+  opacity: 0.8; /* 👈 Adds a slight fade so they know it's interactive */
 }
 
 .apply-btn {

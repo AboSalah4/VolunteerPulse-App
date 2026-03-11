@@ -208,14 +208,25 @@ app.get("/api/tasks", async (req, res) => {
   res.json(tasks);
 });
 
+//  UPDATED ROUTE: Toggle Apply / Un-apply
 app.post("/api/apply-task", async (req, res) => {
-  const { email, taskId } = req.body;
-  const user = await User.findOne({ email });
-  if (!user.appliedTasks.includes(taskId)) {
-    user.appliedTasks.push(taskId);
+  try {
+    const { email, taskId } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // If already applied, remove it (Un-apply). If not, add it (Apply).
+    if (user.appliedTasks.includes(taskId)) {
+      user.appliedTasks = user.appliedTasks.filter((id) => id !== taskId);
+    } else {
+      user.appliedTasks.push(taskId);
+    }
+
     await user.save();
+    res.status(200).json({ appliedTasks: user.appliedTasks });
+  } catch (error) {
+    res.status(500).json({ message: "Application failed" });
   }
-  res.json({ appliedTasks: user.appliedTasks });
 });
 
 app.post("/api/register", async (req, res) => {
