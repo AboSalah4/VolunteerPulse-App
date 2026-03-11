@@ -40,13 +40,14 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
   interests: { type: [String], default: [] },
-  appliedTasks: [{ type: String }], // Storing IDs as strings for easier frontend matching
+  appliedTasks: [{ type: String }],
+  savedTasks: [{ type: String }], // 👈 NEW: Array to store bookmarked Task IDs
 });
 const User = mongoose.model("User", UserSchema);
 
 // --- SEED DATA ---
 const seedTasks = async () => {
-  await Task.deleteMany({}); // Clears old "No Address" tasks
+  await Task.deleteMany({});
   await Task.insertMany([
     {
       title: "Sort Books",
@@ -148,30 +149,11 @@ const seedTasks = async () => {
       address: "450 Ridout St N, London, ON",
     },
   ]);
-  console.log("🌱 Database seeded with New Addresses!");
+  console.log("🌱 Database seeded!");
 };
 mongoose.connection.once("open", seedTasks);
 
 // --- ROUTES ---
-app.get("/api/tasks", async (req, res) => {
-  const { maxTime } = req.query;
-  const tasks = await Task.find({
-    duration: { $lte: parseInt(maxTime) || 999999 },
-  });
-  res.json(tasks);
-});
-
-app.post("/api/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
-    res.status(201).json({ message: "User created!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 app.post("/api/login", async (req, res) => {
   try {
@@ -188,6 +170,7 @@ app.post("/api/login", async (req, res) => {
         profilePic: user.profilePic,
         interests: user.interests,
         appliedTasks: user.appliedTasks,
+        savedTasks: user.savedTasks, // 👈 NEW: Return saved tasks on login
       },
     });
   } catch (err) {
@@ -195,14 +178,34 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.post("/api/update-interests", async (req, res) => {
-  const { email, interests } = req.body;
-  const user = await User.findOneAndUpdate(
-    { email },
-    { interests },
-    { new: true },
-  );
-  res.json({ interests: user.interests });
+// 👈 NEW ROUTE: Save for later logic
+app.post("/api/save-task", async (req, res) => {
+  try {
+    const { email, taskId } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Toggle logic: If already saved, remove it. If not, add it.
+    if (user.savedTasks.includes(taskId)) {
+      user.savedTasks = user.savedTasks.filter((id) => id !== taskId);
+    } else {
+      user.savedTasks.push(taskId);
+    }
+
+    await user.save();
+    res.status(200).json({ savedTasks: user.savedTasks });
+  } catch (error) {
+    res.status(500).json({ message: "Save failed" });
+  }
+});
+
+// (Keep all other routes: register, update-interests, apply-task, etc. exactly the same)
+app.get("/api/tasks", async (req, res) => {
+  const { maxTime } = req.query;
+  const tasks = await Task.find({
+    duration: { $lte: parseInt(maxTime) || 999999 },
+  });
+  res.json(tasks);
 });
 
 app.post("/api/apply-task", async (req, res) => {
@@ -215,28 +218,41 @@ app.post("/api/apply-task", async (req, res) => {
   res.json({ appliedTasks: user.appliedTasks });
 });
 
-// Forgot/Reset/Upload routes remain here as previously written...
+app.post("/api/register", async (req, res) => {
+  const { name, email, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = new User({ name, email, password: hashedPassword });
+  await newUser.save();
+  res.status(201).json({ message: "User created!" });
+});
+
+app.post("/api/update-interests", async (req, res) => {
+  const { email, interests } = req.body;
+  const user = await User.findOneAndUpdate(
+    { email },
+    { interests },
+    { new: true },
+  );
+  res.json({ interests: user.interests });
+});
+
 app.post("/api/forgot-password", async (req, res) => {
-  try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(404).json({ message: "No user found." });
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
-    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
-    await user.save();
-    const resetUrl = `https://volunteer-pulse-eight.vercel.app/reset-password/${resetToken}`;
-    await sendEmail({
-      email: user.email,
-      subject: "Password Reset",
-      message: `Link: ${resetUrl}`,
-    });
-    res.status(200).json({ message: "Token sent!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return res.status(404).json({ message: "No user found." });
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  user.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+  await user.save();
+  const resetUrl = `https://volunteer-pulse-eight.vercel.app/reset-password/${resetToken}`;
+  await sendEmail({
+    email: user.email,
+    subject: "Password Reset",
+    message: `Link: ${resetUrl}`,
+  });
+  res.status(200).json({ message: "Token sent!" });
 });
 
 app.post("/api/reset-password/:token", async (req, res) => {

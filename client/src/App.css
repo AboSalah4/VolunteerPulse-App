@@ -515,3 +515,30 @@ body {
   border-radius: 4px;
   cursor: default;
 }
+/* Save Heart Button Styling */
+.heart-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.2s;
+}
+
+.heart-btn:hover {
+  transform: scale(1.2);
+}
+
+.save-filter-btn {
+  margin-left: auto; /* Push to the right */
+  border: 2px solid #ef4444 !important;
+  color: #ef4444 !important;
+}
+
+.save-filter-btn.active {
+  background-color: #ef4444 !important;
+  color: white !important;
+}

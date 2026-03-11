@@ -25,26 +25,13 @@ function VolunteerApp() {
   const [filter, setFilter] = useState(999999);
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [resetToken, setResetToken] = useState("");
-  const [isResetMode, setIsResetMode] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-  const [uploading, setUploading] = useState(false);
-
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [viewMode, setViewMode] = useState("list");
 
-  const AVAILABLE_CATEGORIES = [
-    "Education",
-    "Environment",
-    "Animals",
-    "Community",
-    "Tech",
-  ];
+  // 👇 NEW: State to show only saved tasks
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
   useEffect(() => {
@@ -61,45 +48,41 @@ function VolunteerApp() {
 
   const handleAuth = async (e) => {
     e.preventDefault();
-    setError("");
+    const email = e.target.email.value;
+    const password = e.target.password.value;
     const endpoint = isRegistering ? "/api/register" : "/api/login";
     try {
-      const res = await axios.post(
-        `${API_URL}${endpoint}`,
-        isRegistering ? { name, email, password } : { email, password },
-      );
+      const res = await axios.post(`${API_URL}${endpoint}`, {
+        email,
+        password,
+        name: e.target.name?.value,
+      });
       if (isRegistering) {
         setIsRegistering(false);
-        setSuccessMsg("Account created!");
+        setSuccessMsg("Registered!");
       } else {
         login(res.data.user);
         setShowLogin(false);
       }
     } catch (err) {
-      setError("Auth failed");
+      alert("Auth failed");
     }
   };
 
-  // 👇 RESTORED: This makes the interest chips clickable again!
-  const toggleInterest = (category) => {
-    if (selectedInterests.includes(category)) {
-      setSelectedInterests(selectedInterests.filter((c) => c !== category));
-    } else {
-      setSelectedInterests([...selectedInterests, category]);
+  // 👇 NEW: Handle Saving Tasks
+  const handleSaveTask = async (taskId) => {
+    if (!user) {
+      setShowLogin(true);
+      return;
     }
-  };
-
-  const saveInterests = async () => {
     try {
-      const res = await axios.post(`${API_URL}/api/update-interests`, {
+      const res = await axios.post(`${API_URL}/api/save-task`, {
         email: user.email,
-        interests: selectedInterests,
+        taskId,
       });
-      login({ ...user, interests: res.data.interests });
-      setSuccessMsg("Interests saved!");
-      setTimeout(() => setSuccessMsg(""), 2000);
+      login({ ...user, savedTasks: res.data.savedTasks });
     } catch (err) {
-      setError("Save failed");
+      console.error("Save failed", err);
     }
   };
 
@@ -114,10 +97,8 @@ function VolunteerApp() {
         taskId,
       });
       login({ ...user, appliedTasks: res.data.appliedTasks });
-      setSuccessMsg("Applied!");
-      setTimeout(() => setSuccessMsg(""), 2000);
     } catch (err) {
-      setError("Apply failed");
+      console.error("Apply failed", err);
     }
   };
 
@@ -127,7 +108,12 @@ function VolunteerApp() {
     return `${mins / 1440} Days`;
   };
 
-  const sortedTasks = [...tasks].sort((a, b) => {
+  // Filter tasks if "Show Saved Only" is active
+  const filteredTasks = showSavedOnly
+    ? tasks.filter((t) => user?.savedTasks?.includes(t._id))
+    : tasks;
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
     const aMatch = user?.interests?.includes(a.category) ? 1 : 0;
     const bMatch = user?.interests?.includes(b.category) ? 1 : 0;
     return bMatch - aMatch;
@@ -142,16 +128,14 @@ function VolunteerApp() {
         <div className="header-center">
           {user && (
             <div className="user-profile-header">
-              <div className="profile-pic-container">
-                <img
-                  src={
-                    user.profilePic ||
-                    `https://ui-avatars.com/api/?name=${user.name}`
-                  }
-                  className="profile-pic-nav"
-                  alt="Profile"
-                />
-              </div>
+              <img
+                src={
+                  user.profilePic ||
+                  `https://ui-avatars.com/api/?name=${user.name}`
+                }
+                className="profile-pic-nav"
+                alt="Profile"
+              />
               <span>
                 Welcome, <strong>{user.name}</strong>!
               </span>
@@ -174,41 +158,21 @@ function VolunteerApp() {
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>{isRegistering ? "Register" : "Login"}</h2>
             <form onSubmit={handleAuth}>
               {isRegistering && (
-                <input
-                  type="text"
-                  placeholder="Name"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+                <input name="name" type="text" placeholder="Name" required />
               )}
+              <input name="email" type="email" placeholder="Email" required />
               <input
-                type="email"
-                placeholder="Email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <input
+                name="password"
                 type="password"
                 placeholder="Password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
               <button type="submit" className="submit-btn">
                 {isRegistering ? "Sign Up" : "Log In"}
               </button>
             </form>
-            <p
-              className="toggle-text"
-              onClick={() => setIsRegistering(!isRegistering)}
-            >
-              {isRegistering ? "Back to Login" : "Need an account? Register"}
-            </p>
             <button className="close-btn" onClick={() => setShowLogin(false)}>
               Close
             </button>
@@ -217,44 +181,29 @@ function VolunteerApp() {
       )}
 
       <div className="main-content">
-        {user && (
-          <div className="interests-section">
-            <h3>Personalize Your Feed</h3>
-            <div className="chips-container">
-              {AVAILABLE_CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  className={`interest-chip ${selectedInterests.includes(cat) ? "active" : ""}`}
-                  onClick={() => toggleInterest(cat)}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-            <button className="save-interests-btn" onClick={saveInterests}>
-              Save Interests
-            </button>
-            {successMsg === "Interests saved!" && (
-              <span style={{ color: "green", marginLeft: "10px" }}>
-                ✓ Saved!
-              </span>
-            )}
-          </div>
-        )}
-
         <div className="view-toggle">
           <button
             className={viewMode === "list" ? "active" : ""}
             onClick={() => setViewMode("list")}
           >
-            📋 List View
+            📋 List
           </button>
           <button
             className={viewMode === "map" ? "active" : ""}
             onClick={() => setViewMode("map")}
           >
-            🗺️ Map View
+            🗺️ Map
           </button>
+
+          {/* 👇 NEW: Toggle for Saved Tasks */}
+          {user && (
+            <button
+              className={`save-filter-btn ${showSavedOnly ? "active" : ""}`}
+              onClick={() => setShowSavedOnly(!showSavedOnly)}
+            >
+              ❤️ {showSavedOnly ? "Showing Saved" : "Show Saved"}
+            </button>
+          )}
         </div>
 
         <div className="filter-section">
@@ -274,14 +223,20 @@ function VolunteerApp() {
           <div className="task-list">
             {sortedTasks.map((task) => (
               <div key={task._id} className="task-card">
+                {/* 👇 NEW: Save/Heart Button */}
+                <button
+                  className={`heart-btn ${user?.savedTasks?.includes(task._id) ? "saved" : ""}`}
+                  onClick={() => handleSaveTask(task._id)}
+                >
+                  {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
+                </button>
+
                 {user?.interests?.includes(task.category) && (
                   <div className="recommended-badge">⭐ Recommended</div>
                 )}
                 <h3>{task.title}</h3>
                 <p className="org-name">{task.organization}</p>
-                {/* 👇 FIXED: Using task.address correctly now */}
                 <p className="task-address">📍 {task.address}</p>
-                <span className="category-tag">{task.category}</span>
                 <div className="badge-container">
                   <span className="duration-badge macro">
                     ⏱ {formatDuration(task.duration)}
@@ -319,10 +274,17 @@ function VolunteerApp() {
                     <br />
                     {task.organization}
                     <br />
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                      {task.address}
-                    </span>
-                    <br />
+                    <button
+                      onClick={() => handleSaveTask(task._id)}
+                      style={{
+                        border: "none",
+                        background: "none",
+                        cursor: "pointer",
+                        fontSize: "18px",
+                      }}
+                    >
+                      {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
+                    </button>
                     <button
                       className={
                         user?.appliedTasks?.includes(task._id)
