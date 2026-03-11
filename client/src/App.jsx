@@ -3,6 +3,23 @@ import axios from "axios";
 import "./App.css";
 import AuthContext, { AuthProvider } from "./AuthContext";
 
+// 👇 NEW: Map Imports
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// 👇 FIX: Leaflet default icon bug in React
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
 function VolunteerApp() {
   const { user, login, logout } = useContext(AuthContext);
 
@@ -20,13 +37,9 @@ function VolunteerApp() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-
   const [uploading, setUploading] = useState(false);
 
-  // 👇 NEW: State for tracking which interests the user clicks
   const [selectedInterests, setSelectedInterests] = useState([]);
-
-  // These match the categories we just seeded in the database
   const AVAILABLE_CATEGORIES = [
     "Education",
     "Environment",
@@ -35,9 +48,11 @@ function VolunteerApp() {
     "Tech",
   ];
 
+  // 👇 NEW: State to toggle between List and Map view
+  const [viewMode, setViewMode] = useState("list");
+
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
-  // When a user logs in, load their previously saved interests into the UI
   useEffect(() => {
     if (user && user.interests) {
       setSelectedInterests(user.interests);
@@ -116,7 +131,6 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 NEW: Toggle interest button logic
   const toggleInterest = (category) => {
     if (selectedInterests.includes(category)) {
       setSelectedInterests(selectedInterests.filter((c) => c !== category));
@@ -125,18 +139,14 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 NEW: Save interests to database
   const saveInterests = async () => {
     try {
       const res = await axios.post(`${API_URL}/api/update-interests`, {
         email: user.email,
         interests: selectedInterests,
       });
-      // Update the user context so the app knows about the new interests immediately
       login({ ...user, interests: res.data.interests });
       setSuccessMsg("Interests saved successfully!");
-
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
       setError("Failed to save interests.");
@@ -179,8 +189,6 @@ function VolunteerApp() {
     return `${mins / 1440} Days`;
   };
 
-  // 👇 NEW: Smart Sorting Logic
-  // This takes the tasks and sorts them so matches appear at the top
   const sortedTasks = [...tasks].sort((a, b) => {
     const aMatch = user?.interests?.includes(a.category) ? 1 : 0;
     const bMatch = user?.interests?.includes(b.category) ? 1 : 0;
@@ -347,7 +355,6 @@ function VolunteerApp() {
       )}
 
       <div className="main-content">
-        {/* 👇 NEW: Interests Selector UI (Only visible to logged-in users) 👇 */}
         {user && (
           <div className="interests-section">
             <h3>Personalize Your Feed</h3>
@@ -380,6 +387,22 @@ function VolunteerApp() {
           </div>
         )}
 
+        {/* 👇 NEW: List vs Map Toggle Buttons */}
+        <div className="view-toggle">
+          <button
+            className={viewMode === "list" ? "active" : ""}
+            onClick={() => setViewMode("list")}
+          >
+            📋 List View
+          </button>
+          <button
+            className={viewMode === "map" ? "active" : ""}
+            onClick={() => setViewMode("map")}
+          >
+            🗺️ Map View
+          </button>
+        </div>
+
         <div className="filter-section">
           <label>I have available time:</label>
           <select
@@ -393,34 +416,93 @@ function VolunteerApp() {
           </select>
         </div>
 
-        <div className="task-list">
-          {/* 👇 We now map over sortedTasks instead of just tasks 👇 */}
-          {sortedTasks.map((task) => (
-            <div key={task._id} className="task-card">
-              {/* 👇 Adds a ⭐ if the task matches the user's interests 👇 */}
-              {user?.interests?.includes(task.category) && (
-                <div className="recommended-badge">⭐ Recommended Match</div>
-              )}
-
-              <h3>{task.title}</h3>
-              <p className="org-name">{task.organization}</p>
-
-              {/* Shows the category tag */}
-              <span className="category-tag">{task.category}</span>
-
-              <div className="badge-container">
-                <span className="duration-badge macro">
-                  ⏱ {formatDuration(task.duration)}
-                </span>
+        {/* 👇 NEW: Conditional Rendering for List OR Map */}
+        {viewMode === "list" ? (
+          <div className="task-list">
+            {sortedTasks.map((task) => (
+              <div key={task._id} className="task-card">
+                {user?.interests?.includes(task.category) && (
+                  <div className="recommended-badge">⭐ Recommended Match</div>
+                )}
+                <h3>{task.title}</h3>
+                <p className="org-name">{task.organization}</p>
+                <span className="category-tag">{task.category}</span>
+                <div className="badge-container">
+                  <span className="duration-badge macro">
+                    ⏱ {formatDuration(task.duration)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => alert(user ? `Applied!` : "Log In first!")}
+                >
+                  {user ? "Apply Now" : "Log In to Apply"}
+                </button>
               </div>
-              <button
-                onClick={() => alert(user ? `Applied!` : "Log In first!")}
-              >
-                {user ? "Apply Now" : "Log In to Apply"}
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="map-container-wrapper">
+            {/* Center is set to London, Ontario [42.9849, -81.2453] */}
+            <MapContainer
+              center={[42.9849, -81.2453]}
+              zoom={13}
+              scrollWheelZoom={true}
+              style={{
+                height: "500px",
+                width: "100%",
+                borderRadius: "12px",
+                zIndex: 0,
+              }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {sortedTasks.map(
+                (task) =>
+                  task.lat &&
+                  task.lng && (
+                    <Marker key={task._id} position={[task.lat, task.lng]}>
+                      <Popup>
+                        <strong style={{ fontSize: "16px" }}>
+                          {task.title}
+                        </strong>
+                        <br />
+                        {task.organization}
+                        <br />
+                        <span style={{ color: "#2563eb", fontWeight: "bold" }}>
+                          {task.category}
+                        </span>{" "}
+                        - ⏱ {formatDuration(task.duration)}
+                        <br />
+                        <button
+                          onClick={() =>
+                            alert(
+                              user
+                                ? `Applied to ${task.title}!`
+                                : "Log In first!",
+                            )
+                          }
+                          style={{
+                            marginTop: "8px",
+                            width: "100%",
+                            padding: "6px",
+                            background: "#2563eb",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {user ? "Apply Now" : "Log in to Apply"}
+                        </button>
+                      </Popup>
+                    </Marker>
+                  ),
+              )}
+            </MapContainer>
+          </div>
+        )}
       </div>
     </div>
   );
