@@ -21,7 +21,9 @@ function VolunteerApp() {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // 👇 Centralized Live Backend URL 👇
+  const [uploading, setUploading] = useState(false);
+
+  // 👇 READY FOR PRODUCTION: Pointing to your live Render server!
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
   useEffect(() => {
@@ -34,7 +36,6 @@ function VolunteerApp() {
     }
   }, []);
 
-  // Fetch Tasks
   useEffect(() => {
     axios
       .get(`${API_URL}/api/tasks?maxTime=${filter}`)
@@ -42,7 +43,6 @@ function VolunteerApp() {
       .catch((err) => console.error(err));
   }, [filter]);
 
-  // Handle Login & Registration
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
@@ -65,7 +65,39 @@ function VolunteerApp() {
     }
   };
 
-  // Handle Sending the Email
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    // Email appended before the image to ensure the backend reads it correctly
+    formData.append("email", user.email);
+    formData.append("image", file);
+
+    setUploading(true);
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/upload-profile-pic`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      // Cache-busting timestamp to force browser refresh
+      const cleanUrl = res.data.url;
+      const timestampedUrl = `${cleanUrl}?t=${Date.now()}`;
+
+      login({ ...user, profilePic: timestampedUrl });
+      setSuccessMsg("Profile picture updated!");
+    } catch (err) {
+      console.error("Upload error", err);
+      setError("Failed to upload image.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setError("");
@@ -78,7 +110,6 @@ function VolunteerApp() {
     }
   };
 
-  // Handle Updating the Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError("");
@@ -111,9 +142,45 @@ function VolunteerApp() {
         </div>
         <div className="header-center">
           {user && (
-            <span>
-              Welcome, <strong>{user.name}</strong>!
-            </span>
+            <div className="user-profile-header">
+              <div className="profile-pic-container">
+                {user.profilePic ? (
+                  <img
+                    src={user.profilePic}
+                    alt="Profile"
+                    className="profile-pic-nav"
+                    onError={(e) => {
+                      e.target.src =
+                        "https://ui-avatars.com/api/?name=" + user.name;
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                    className="profile-pic-nav"
+                    alt="Avatar"
+                  />
+                )}
+                <label className="upload-label">
+                  {uploading ? (
+                    "..."
+                  ) : (
+                    <svg viewBox="0 0 512 512" width="12px" height="12px">
+                      <path d="M512 144v288c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V144c0-26.5 21.5-48 48-48h88l12.3-32.9c7-18.6 24.8-31.1 44.8-31.1h131.8c20 0 37.8 12.5 44.8 31.1L376 96h88c26.5 0 48 21.5 48 48zM256 160c-70.7 0-128 57.3-128 128s57.3 128 128 128s128-57.3 128-128s-57.3-128-128-128zm0 192c-35.3 0-64-28.7-64-64s28.7-64 64-64s64 28.7 64 64s-28.7 64-64 64z" />
+                    </svg>
+                  )}
+                  <input
+                    type="file"
+                    onChange={handleImageUpload}
+                    hidden
+                    accept="image/*"
+                  />
+                </label>
+              </div>
+              <span>
+                Welcome, <strong>{user.name}</strong>!
+              </span>
+            </div>
           )}
         </div>
         <div className="header-right">
@@ -122,32 +189,25 @@ function VolunteerApp() {
               Logout
             </button>
           ) : (
-            <button
-              onClick={() => {
-                setShowLogin(true);
-                setIsForgotPassword(false);
-                setIsRegistering(false);
-                setIsResetMode(false);
-              }}
-              className="login-btn"
-            >
+            <button onClick={() => setShowLogin(true)} className="login-btn">
               Sign In
             </button>
           )}
         </div>
       </header>
 
+      {/* MODALS SECTION */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>
               {isResetMode
-                ? "Create New Password"
+                ? "New Password"
                 : isForgotPassword
-                  ? "Reset Password"
+                  ? "Reset"
                   : isRegistering
-                    ? "Create Account"
-                    : "Welcome Back"}
+                    ? "Register"
+                    : "Login"}
             </h2>
             {error && <p style={{ color: "red" }}>{error}</p>}
             {successMsg && <p style={{ color: "green" }}>{successMsg}</p>}
@@ -162,27 +222,26 @@ function VolunteerApp() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button type="submit" className="submit-btn">
-                  Update Password
+                  Update
                 </button>
               </form>
             ) : isForgotPassword ? (
               <form onSubmit={handleForgotPassword}>
                 <input
                   type="email"
-                  placeholder="Email Address"
+                  placeholder="Email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
                 <button type="submit" className="submit-btn">
-                  Send Reset Link
+                  Send Link
                 </button>
                 <p
                   className="toggle-text"
                   onClick={() => setIsForgotPassword(false)}
-                  style={{ cursor: "pointer", color: "blue" }}
                 >
-                  Back to Login
+                  Back
                 </p>
               </form>
             ) : (
@@ -190,7 +249,7 @@ function VolunteerApp() {
                 {isRegistering && (
                   <input
                     type="text"
-                    placeholder="Full Name"
+                    placeholder="Name"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -198,7 +257,7 @@ function VolunteerApp() {
                 )}
                 <input
                   type="email"
-                  placeholder="Email Address"
+                  placeholder="Email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -217,42 +276,20 @@ function VolunteerApp() {
                   <p
                     className="toggle-text"
                     onClick={() => setIsForgotPassword(true)}
-                    style={{
-                      cursor: "pointer",
-                      color: "gray",
-                      fontSize: "12px",
-                    }}
                   >
                     Forgot Password?
                   </p>
                 )}
               </form>
             )}
-
-            {!isForgotPassword && !isResetMode && (
-              <p
-                className="toggle-text"
-                onClick={() => setIsRegistering(!isRegistering)}
-                style={{ cursor: "pointer", color: "blue" }}
-              >
-                {isRegistering
-                  ? "Already have an account? Log In"
-                  : "New here? Create Account"}
-              </p>
-            )}
-            <button
-              className="close-btn"
-              onClick={() => {
-                setShowLogin(false);
-                window.history.pushState({}, "", "/");
-              }}
-            >
+            <button className="close-btn" onClick={() => setShowLogin(false)}>
               Close
             </button>
           </div>
         </div>
       )}
 
+      {/* TASK SECTION */}
       <div className="main-content">
         <div className="filter-section">
           <label>I have available time:</label>
@@ -261,32 +298,21 @@ function VolunteerApp() {
             onChange={(e) => setFilter(e.target.value)}
             className="time-select"
           >
-            <option value="15">15 Minutes (Micro)</option>
+            <option value="15">15 Minutes</option>
             <option value="60">1 Hour</option>
-            <option value="240">4 Hours</option>
             <option value="999999">Show Everything</option>
           </select>
         </div>
         <div className="task-list">
           {tasks.map((task) => (
             <div key={task._id} className="task-card">
-              <div>
-                <h3>{task.title}</h3>
-                <p className="org-name">{task.organization}</p>
-              </div>
-              <div className="badge-container">
-                <span
-                  className={`duration-badge ${task.duration <= 60 ? "micro" : "macro"}`}
-                >
-                  ⏱ {formatDuration(task.duration)}
-                </span>
-              </div>
+              <h3>{task.title}</h3>
+              <p>{task.organization}</p>
+              <span className="duration-badge">
+                ⏱ {formatDuration(task.duration)}
+              </span>
               <button
-                onClick={() =>
-                  alert(
-                    user ? `Applied to ${task.title}` : "Please Log In first!",
-                  )
-                }
+                onClick={() => alert(user ? `Applied!` : "Log In first!")}
               >
                 {user ? "Apply Now" : "Log In to Apply"}
               </button>

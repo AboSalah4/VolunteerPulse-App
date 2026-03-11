@@ -29,10 +29,6 @@ body {
   box-sizing: border-box;
 }
 
-.container {
-  /* No background here, letting the page breathe */
-}
-
 /* --- HEADER (3-COLUMN LAYOUT) --- */
 .app-header {
   display: flex;
@@ -47,7 +43,7 @@ body {
 
 /* 1. Logo (Left) */
 .header-left {
-  flex: 1; /* Takes 1 part of space */
+  flex: 1;
   display: flex;
   justify-content: flex-start;
 }
@@ -57,20 +53,86 @@ body {
   font-size: 1.5rem;
 }
 
-/* 2. Welcome Text (Center) */
+/* 2. Welcome Text & Profile (Center) */
 .header-center {
-  flex: 2; /* Takes 2 parts of space (dominates the middle) */
+  flex: 2;
   display: flex;
-  justify-content: center; /* PERFECTLY CENTERED */
+  justify-content: center;
   color: #333;
   font-size: 1.1rem;
 }
 
+/* Layout the whole profile area (Image + Text) */
+.user-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Added more gap */
+  padding: 5px;
+  border-radius: 30px;
+}
+
+/* 1. The Container for the Photo & Button */
+.profile-pic-container {
+  position: relative;
+  /* Make the container slightly wider to hold the button on the OUTSIDE */
+  width: 70px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Keeps photo to the left */
+}
+
+/* 2. The Photo Circle */
+.profile-pic-nav {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: #e2e8f0;
+}
+
+/* 3. The Upload Button (Now positioned outside) */
+.upload-label {
+  position: absolute;
+  /* 👇 This moves it COMPLETELY to the outside-right 👇 */
+  right: -5px;
+  bottom: 8px; /* Vertically centered-ish */
+
+  background: #3b82f6;
+  color: white;
+  width: 20px; /* Shrunk slightly */
+  height: 20px; /* Shrunk slightly */
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  /* Centers whatever is inside (plus sign or camera icon) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-label:hover {
+  transform: scale(1.15);
+  background: #2563eb;
+}
+
+/* Make sure the icon or text inside is centered and small */
+.upload-label svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
 /* 3. Button (Right) */
 .header-right {
-  flex: 1; /* Takes 1 part of space */
+  flex: 1;
   display: flex;
-  justify-content: flex-end; /* Aligns button to far right */
+  justify-content: flex-end;
 }
 
 /* Buttons */
@@ -79,12 +141,18 @@ body {
   color: white;
   padding: 8px 20px;
   border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 .logout-btn {
   background: #ef4444;
   color: white;
   padding: 8px 16px;
   border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 /* Mobile Adjustment: Stack them vertically on small screens */
@@ -96,7 +164,7 @@ body {
   .header-center {
     order: 2;
     margin-bottom: 10px;
-  } /* Put text below logo */
+  }
 }
 
 /* --- FILTER SECTION --- */
@@ -109,7 +177,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap; /* Wraps on mobile */
+  flex-wrap: wrap;
   gap: 15px;
 }
 
@@ -129,7 +197,6 @@ body {
 /* --- TASK GRID (THE RESPONSIVE MAGIC) --- */
 .task-list {
   display: grid;
-  /* Auto-fit: Fits as many 300px cards as possible in a row */
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 25px;
 }
@@ -165,11 +232,11 @@ body {
   font-size: 0.95rem;
 }
 
-/* Badges */
 .badge-container {
   margin-top: auto;
   padding-bottom: 15px;
-} /* Pushes button down */
+}
+
 .duration-badge {
   display: inline-block;
   padding: 6px 12px;
@@ -186,14 +253,6 @@ body {
   color: #6b21a8;
 }
 
-/* Buttons */
-button {
-  cursor: pointer;
-  border: none;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-
 .task-card button {
   width: 100%;
   padding: 12px;
@@ -201,22 +260,12 @@ button {
   background-color: var(--primary);
   color: white;
   margin-top: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 .task-card button:hover {
   background-color: var(--primary-hover);
-}
-
-.login-btn {
-  background: var(--primary);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 6px;
-}
-.logout-btn {
-  background: #ef4444;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
 }
 
 /* --- MOBILE OPTIMIZATION (< 768px) --- */
@@ -226,18 +275,16 @@ button {
     text-align: center;
     gap: 15px;
   }
-
   .filter-section {
     flex-direction: column;
     align-items: stretch;
   }
-
   .task-list {
-    grid-template-columns: 1fr; /* Force single column on mobile */
+    grid-template-columns: 1fr;
   }
 }
 
-/* --- MODAL (unchanged) --- */
+/* --- MODAL --- */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -273,15 +320,21 @@ button {
   color: white;
   border-radius: 6px;
   margin-top: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 .close-btn {
   background: transparent;
   color: #999;
   margin-top: 10px;
+  border: none;
+  cursor: pointer;
 }
 .toggle-text {
   margin-top: 15px;
   display: block;
   color: #555;
   text-decoration: underline;
+  cursor: pointer;
 }

@@ -7,6 +7,7 @@ const crypto = require("crypto");
 require("dotenv").config();
 
 const sendEmail = require("./sendEmail");
+const { upload } = require("./cloudinaryConfig"); // 👈 Moved this to the top!
 
 const app = express();
 app.use(cors());
@@ -29,13 +30,14 @@ const Task = mongoose.model(
   }),
 );
 
-// User Model
+// User Model (👈 Cleaned up and updated!)
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   name: { type: String, required: true },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  profilePic: { type: String, default: "" }, // 👈 Added the image field here
 });
 const User = mongoose.model("User", UserSchema);
 
@@ -107,7 +109,12 @@ app.post("/api/login", async (req, res) => {
 
     res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profilePic: user.profilePic, // 👈 Tells React about the image on login
+      },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -132,7 +139,6 @@ app.post("/api/forgot-password", async (req, res) => {
     user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    // UPDATED FOR PRODUCTION: Points to your Vercel App
     // Ensure this points to your LIVE Vercel app
     const resetUrl = `https://volunteer-pulse-eight.vercel.app/reset-password/${resetToken}`;
 
@@ -147,7 +153,6 @@ app.post("/api/forgot-password", async (req, res) => {
 
       res.status(200).json({ message: "Reset token sent to email!" });
     } catch (err) {
-      // 👇 THIS IS THE NEW TRAP TO CATCH THE SILENT ERROR 👇
       console.error("🔴 EMAIL ERROR DETAILS:", err);
 
       user.resetPasswordToken = undefined;
@@ -194,6 +199,36 @@ app.post("/api/reset-password/:token", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// 6. Upload Profile Picture Route (👈 Now safely independent!)
+app.post(
+  "/api/upload-profile-pic",
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+      const imageUrl = req.file.path;
+
+      // Save the URL to the user in MongoDB
+      const updatedUser = await User.findOneAndUpdate(
+        { email },
+        { profilePic: imageUrl },
+        { new: true },
+      );
+
+      if (!updatedUser)
+        return res.status(404).json({ message: "User not found" });
+
+      res.status(200).json({
+        message: "Image uploaded successfully!",
+        url: imageUrl,
+      });
+    } catch (error) {
+      console.error("Upload Error:", error);
+      res.status(500).json({ message: "Upload failed" });
+    }
+  },
+);
 
 const PORT = process.env.PORT || 5001;
 
