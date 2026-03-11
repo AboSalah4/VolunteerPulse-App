@@ -461,3 +461,57 @@ body {
   overflow: hidden;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
+/* Address styling */
+.task-address {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 5px 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Applied Button State */
+.applied-btn {
+  background-color: #22c55e !important; /* Green */
+  color: white;
+  cursor: default;
+  border: none;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.apply-btn {
+  background-color: var(--primary);
+  color: white;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Map Popup Buttons */
+.apply-btn-small {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.applied-btn-small {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px;
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: default;
+}

@@ -13,14 +13,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. Connect to MongoDB Atlas
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected!"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // --- MODELS ---
-// Task Model (👇 Added lat and lng for Map support)
 const Task = mongoose.model(
   "Task",
   new mongoose.Schema({
@@ -28,12 +26,12 @@ const Task = mongoose.model(
     organization: String,
     duration: Number,
     category: String,
-    lat: Number, // 👈 Latitude
-    lng: Number, // 👈 Longitude
+    lat: Number,
+    lng: Number,
+    address: String, // 👈 NEW: Physical address field
   }),
 );
 
-// User Model
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -41,44 +39,122 @@ const UserSchema = new mongoose.Schema({
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
-  interests: { type: [String], default: [] }, 
+  interests: { type: [String], default: [] },
+  appliedTasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }], // 👈 NEW: Track user applications
 });
 const User = mongoose.model("User", UserSchema);
 
-// --- SEED DATA ---
+// --- SEED DATA (Updated with real London, ON addresses) ---
 const seedTasks = async () => {
-  // Clear the old tasks to apply the new GPS coordinates
   await Task.deleteMany({});
 
   await Task.insertMany([
-    // Education & Tutoring
-    { title: "Sort Books", organization: "Public Library", duration: 15, category: "Education", lat: 42.9850, lng: -81.2460 },
-    { title: "Online Reading Tutor", organization: "Global Literacy", duration: 60, category: "Education", lat: 42.9820, lng: -81.2510 },
-
-    // Environment
-    { title: "Social Media Post", organization: "EcoGroup", duration: 15, category: "Environment", lat: 42.9800, lng: -81.2500 },
-    { title: "Tree Planting Day", organization: "GreenCity", duration: 240, category: "Environment", lat: 42.9750, lng: -81.2350 },
-
-    // Animals
-    { title: "Walk Dogs", organization: "Animal Shelter", duration: 45, category: "Animals", lat: 42.9900, lng: -81.2400 },
-    { title: "Cat Socialization", organization: "Kitty Haven", duration: 120, category: "Animals", lat: 42.9920, lng: -81.2450 },
-
-    // Community
-    { title: "Event Setup", organization: "Community Center", duration: 180, category: "Community", lat: 42.9860, lng: -81.2380 },
-    { title: "Food Bank Sorter", organization: "Metro Food Bank", duration: 120, category: "Community", lat: 42.9810, lng: -81.2300 },
-
-    // Tech
-    { title: "Hackathon Mentor", organization: "Tech Non-Profit", duration: 1440, category: "Tech", lat: 42.9880, lng: -81.2550 },
-    { title: "Website Bug Fix", organization: "Open Source Project", duration: 300, category: "Tech", lat: 42.9840, lng: -81.2600 },
-    { title: "Database Cleanup", organization: "Charity Tech", duration: 43200, category: "Tech", lat: 42.9870, lng: -81.2480 }, 
+    {
+      title: "Sort Books",
+      organization: "Public Library",
+      duration: 15,
+      category: "Education",
+      lat: 42.985,
+      lng: -81.246,
+      address: "251 Dundas St, London, ON",
+    },
+    {
+      title: "Online Reading Tutor",
+      organization: "Global Literacy",
+      duration: 60,
+      category: "Education",
+      lat: 42.982,
+      lng: -81.251,
+      address: "167 Central Ave, London, ON",
+    },
+    {
+      title: "Social Media Post",
+      organization: "EcoGroup",
+      duration: 15,
+      category: "Environment",
+      lat: 42.98,
+      lng: -81.25,
+      address: "1017 Western Rd, London, ON",
+    },
+    {
+      title: "Tree Planting Day",
+      organization: "GreenCity",
+      duration: 240,
+      category: "Environment",
+      lat: 42.975,
+      lng: -81.235,
+      address: "1001 Fanshawe College Blvd, London, ON",
+    },
+    {
+      title: "Walk Dogs",
+      organization: "Animal Shelter",
+      duration: 45,
+      category: "Animals",
+      lat: 42.99,
+      lng: -81.24,
+      address: "624 Clarke Rd, London, ON",
+    },
+    {
+      title: "Cat Socialization",
+      organization: "Kitty Haven",
+      duration: 120,
+      category: "Animals",
+      lat: 42.992,
+      lng: -81.245,
+      address: "121 Pine Valley Blvd, London, ON",
+    },
+    {
+      title: "Event Setup",
+      organization: "Community Center",
+      duration: 180,
+      category: "Community",
+      lat: 42.986,
+      lng: -81.238,
+      address: "1119 Jalna Blvd, London, ON",
+    },
+    {
+      title: "Food Bank Sorter",
+      organization: "Metro Food Bank",
+      duration: 120,
+      category: "Community",
+      lat: 42.981,
+      lng: -81.23,
+      address: "926 Leathorne St, London, ON",
+    },
+    {
+      title: "Hackathon Mentor",
+      organization: "Tech Non-Profit",
+      duration: 1440,
+      category: "Tech",
+      lat: 42.988,
+      lng: -81.255,
+      address: "150 Dufferin Ave, London, ON",
+    },
+    {
+      title: "Website Bug Fix",
+      organization: "Open Source Project",
+      duration: 300,
+      category: "Tech",
+      lat: 42.984,
+      lng: -81.26,
+      address: "137 Dundas St, London, ON",
+    },
+    {
+      title: "Database Cleanup",
+      organization: "Charity Tech",
+      duration: 43200,
+      category: "Tech",
+      lat: 42.987,
+      lng: -81.248,
+      address: "450 Ridout St N, London, ON",
+    },
   ]);
-  console.log("🌱 Database seeded with Map Coordinates!");
+  console.log("🌱 Database seeded with Addresses and GPS!");
 };
 mongoose.connection.once("open", seedTasks);
 
 // --- ROUTES ---
 
-// 1. Get Tasks
 app.get("/api/tasks", async (req, res) => {
   const { maxTime } = req.query;
   const tasks = await Task.find({
@@ -87,25 +163,6 @@ app.get("/api/tasks", async (req, res) => {
   res.json(tasks);
 });
 
-// 2. Register User
-app.post("/api/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
-
-    res.status(201).json({ message: "User created successfully!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 3. Login User
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -128,6 +185,7 @@ app.post("/api/login", async (req, res) => {
         email: user.email,
         profilePic: user.profilePic,
         interests: user.interests,
+        appliedTasks: user.appliedTasks, // 👈 Send applied tasks on login
       },
     });
   } catch (err) {
@@ -135,7 +193,47 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// 4. Update Interests Route 
+// 👈 NEW ROUTE: Apply for a task
+app.post("/api/apply-task", async (req, res) => {
+  try {
+    const { email, taskId } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.appliedTasks.includes(taskId)) {
+      user.appliedTasks.push(taskId);
+      await user.save();
+    }
+    res
+      .status(200)
+      .json({
+        message: "Applied successfully!",
+        appliedTasks: user.appliedTasks,
+      });
+  } catch (error) {
+    res.status(500).json({ message: "Application failed" });
+  }
+});
+
+// ... (Other routes: register, update-interests, forgot-password, reset-password, upload-profile-pic stay the same)
+
+app.post("/api/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, email, password: hashedPassword });
+    await newUser.save();
+
+    res.status(201).json({ message: "User created successfully!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/update-interests", async (req, res) => {
   try {
     const { email, interests } = req.body;
@@ -156,7 +254,6 @@ app.post("/api/update-interests", async (req, res) => {
   }
 });
 
-// 5. Forgot Password
 app.post("/api/forgot-password", async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -196,7 +293,6 @@ app.post("/api/forgot-password", async (req, res) => {
   }
 });
 
-// 6. Reset Password
 app.post("/api/reset-password/:token", async (req, res) => {
   try {
     const hashedToken = crypto
@@ -225,7 +321,6 @@ app.post("/api/reset-password/:token", async (req, res) => {
   }
 });
 
-// 7. Upload Profile Picture Route
 app.post(
   "/api/upload-profile-pic",
   upload.single("image"),
@@ -252,11 +347,4 @@ app.post(
 );
 
 const PORT = process.env.PORT || 5001;
-
-app.get("/", (req, res) => {
-  res.status(200).send("VolunteerPulse Server is Healthy and Awake!");
-});
-
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
