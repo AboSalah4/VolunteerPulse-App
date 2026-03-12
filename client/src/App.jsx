@@ -245,10 +245,14 @@ function VolunteerApp() {
         userId,
         status,
       });
-      setSuccessMsg(`Applicant ${status}!`);
+      setSuccessMsg(
+        status === "Completed"
+          ? "Task verified and points awarded!"
+          : `Applicant ${status}!`,
+      );
       fetchMyTasks();
       fetchTasks();
-      setTimeout(() => setSuccessMsg(""), 2000);
+      setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
       console.error("Status update failed");
     }
@@ -419,20 +423,24 @@ function VolunteerApp() {
     return bMatch - aMatch;
   });
 
-  // 👇 NEW: Gamification Logic for VP-Q21 & VP-Q22
+  // 👇 FIXED LOGIC: Gold Badge requires 720 Hours (30 Days)
   const getPulseData = (mins) => {
     const hours = Math.floor((mins || 0) / 60);
-    if (hours >= 50)
+    if (hours >= 720)
       return { icon: "🏆", title: "Gold Level", css: "badge-gold" };
-    if (hours >= 20)
+    if (hours >= 50)
       return { icon: "🥈", title: "Silver Level", css: "badge-silver" };
-    if (hours >= 5)
+    if (hours >= 10)
       return { icon: "🥉", title: "Bronze Level", css: "badge-bronze" };
     return { icon: "🌱", title: "Rising Star", css: "badge-starter" };
   };
 
   const pulseData = getPulseData(user?.totalVolunteerMinutes);
   const totalHours = Math.floor((user?.totalVolunteerMinutes || 0) / 60);
+  const displayTime =
+    totalHours >= 720
+      ? `${Math.floor(totalHours / 24)} Days`
+      : `${totalHours} Hours`;
 
   return (
     <div className="container">
@@ -462,8 +470,6 @@ function VolunteerApp() {
                   />
                 </label>
               </div>
-
-              {/* 👇 NEW: Rendering the Pulse Tracker Badge next to the user's name */}
               <div className="user-stats">
                 <span className="welcome-text">
                   Welcome, <strong>{user.name}</strong>!
@@ -472,7 +478,7 @@ function VolunteerApp() {
                   className={`pulse-badge ${pulseData.css}`}
                   title={`${user.totalVolunteerMinutes || 0} Total Minutes Volunteered`}
                 >
-                  {pulseData.icon} {totalHours} Hours ({pulseData.title})
+                  {pulseData.icon} {displayTime} ({pulseData.title})
                 </div>
               </div>
             </div>
@@ -792,12 +798,15 @@ function VolunteerApp() {
                         </span>
                       </div>
 
-                      <button
-                        className="withdraw-btn"
-                        onClick={() => handleApply(task._id)}
-                      >
-                        Withdraw
-                      </button>
+                      {/* 👇 FIXED: You cannot withdraw if the task is already "Completed" */}
+                      {status !== "Completed" && (
+                        <button
+                          className="withdraw-btn"
+                          onClick={() => handleApply(task._id)}
+                        >
+                          Withdraw
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -841,30 +850,74 @@ function VolunteerApp() {
                         </div>
 
                         <div className="action-btns">
-                          <button
-                            onClick={() =>
-                              handleUpdateStatus(
-                                task._id,
-                                app.userId,
-                                "Accepted",
-                              )
-                            }
-                            className="text-green-600 hover:scale-110"
-                          >
-                            <Icons.Check />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleUpdateStatus(
-                                task._id,
-                                app.userId,
-                                "Declined",
-                              )
-                            }
-                            className="text-red-600 hover:scale-110"
-                          >
-                            <Icons.X />
-                          </button>
+                          {/* 👇 FIXED: Added a 3-Step verification flow (Pending -> Accepted -> Completed) */}
+                          {app.status === "Pending" && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleUpdateStatus(
+                                    task._id,
+                                    app.userId,
+                                    "Accepted",
+                                  )
+                                }
+                                className="text-green-600 hover:scale-110"
+                                title="Accept"
+                              >
+                                <Icons.Check />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleUpdateStatus(
+                                    task._id,
+                                    app.userId,
+                                    "Declined",
+                                  )
+                                }
+                                className="text-red-600 hover:scale-110"
+                                title="Decline"
+                              >
+                                <Icons.X />
+                              </button>
+                            </>
+                          )}
+                          {app.status === "Accepted" && (
+                            <button
+                              onClick={() =>
+                                handleUpdateStatus(
+                                  task._id,
+                                  app.userId,
+                                  "Completed",
+                                )
+                              }
+                              className="complete-btn"
+                              title="Verify attendance and award points"
+                            >
+                              Verify 🏅
+                            </button>
+                          )}
+                          {app.status === "Completed" && (
+                            <span
+                              style={{
+                                color: "#16a34a",
+                                fontWeight: "bold",
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              Verified 🎉
+                            </span>
+                          )}
+                          {app.status === "Declined" && (
+                            <span
+                              style={{
+                                color: "#dc2626",
+                                fontWeight: "bold",
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              Declined
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}

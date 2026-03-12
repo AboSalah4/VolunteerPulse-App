@@ -95,7 +95,7 @@ body {
   gap: 10px;
 }
 
-/* 👇 NEW: BADGE & PULSE TRACKER STYLES */
+/* --- BADGE & PULSE TRACKER STYLES --- */
 .user-stats {
   display: flex;
   flex-direction: column;
@@ -442,6 +442,12 @@ body {
   color: #991b1b !important;
 }
 
+/* 👇 FIXED: Student now gets a nice blue banner when they are fully verified */
+.status-banner.completed {
+  background: #e0e7ff !important;
+  color: #3730a3 !important;
+}
+
 /* --- MODALS --- */
 .modal-overlay {
   position: fixed;
@@ -556,6 +562,23 @@ body {
   justify-content: center;
   align-items: center;
   gap: 8px;
+}
+
+/* 👇 FIXED: Styling for the new Verify button for Organizations */
+.complete-btn {
+  background-color: #fef08a !important;
+  color: #a16207 !important;
+  border: 1px solid #fde047 !important;
+  padding: 6px 12px !important;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+.complete-btn:hover {
+  background-color: #fde047 !important;
+  transform: scale(1.05);
 }
 
 /* --- RESPONSIVE MEDIA QUERIES --- */
