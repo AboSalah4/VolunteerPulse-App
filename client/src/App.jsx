@@ -24,23 +24,23 @@ function VolunteerApp() {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState(999999);
 
-  // Auth Modal States
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
   const [resetToken, setResetToken] = useState("");
 
-  // Create Task Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false); // Loading state
+
+  // 👇 UPDATED: Changed duration to handle value and unit separately
   const [newTask, setNewTask] = useState({
     title: "",
     organization: "",
-    duration: "",
+    durationValue: "",
+    durationUnit: "Hours",
     category: "Community",
     address: "",
-    lat: "",
-    lng: "",
   });
 
   const [email, setEmail] = useState("");
@@ -88,26 +88,65 @@ function VolunteerApp() {
     fetchTasks();
   }, [filter]);
 
-  // Handle Task Creation
+  // 👇 UPDATED: Handles auto-geocoding and duration math!
   const handleCreateTask = async (e) => {
     e.preventDefault();
+    setError("");
+    setIsSubmittingTask(true);
+
+    // 1. Calculate the total duration in minutes for the backend
+    let totalMinutes = parseInt(newTask.durationValue);
+    if (newTask.durationUnit === "Hours") totalMinutes *= 60;
+    if (newTask.durationUnit === "Days") totalMinutes *= 1440;
+
     try {
-      await axios.post(`${API_URL}/api/tasks`, newTask);
+      // 2. Auto-Geocode: Turn the address into coordinates automatically!
+      const geoRes = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(newTask.address)}`,
+      );
+
+      let finalLat = 42.9849; // Fallback to London, ON center if address isn't found
+      let finalLng = -81.2453;
+
+      if (geoRes.data && geoRes.data.length > 0) {
+        finalLat = parseFloat(geoRes.data[0].lat);
+        finalLng = parseFloat(geoRes.data[0].lon);
+      } else {
+        alert(
+          "Warning: Could not pinpoint the exact address on the map. Using default city center.",
+        );
+      }
+
+      // 3. Send the clean data to the backend
+      const taskPayload = {
+        title: newTask.title,
+        organization: newTask.organization,
+        duration: totalMinutes,
+        category: newTask.category,
+        address: newTask.address,
+        lat: finalLat,
+        lng: finalLng,
+      };
+
+      await axios.post(`${API_URL}/api/tasks`, taskPayload);
       setSuccessMsg("Task created successfully!");
       setShowCreateModal(false);
+
+      // Reset form
       setNewTask({
         title: "",
         organization: "",
-        duration: "",
+        durationValue: "",
+        durationUnit: "Hours",
         category: "Community",
         address: "",
-        lat: "",
-        lng: "",
       });
       fetchTasks();
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
       setError("Failed to create task.");
+    } finally {
+      setIsSubmittingTask(false);
     }
   };
 
@@ -319,6 +358,7 @@ function VolunteerApp() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Post New Opportunity</h2>
+            {error && <p style={{ color: "red" }}>{error}</p>}
             <form onSubmit={handleCreateTask} className="task-form">
               <input
                 type="text"
@@ -338,15 +378,31 @@ function VolunteerApp() {
                   setNewTask({ ...newTask, organization: e.target.value })
                 }
               />
-              <input
-                type="number"
-                placeholder="Duration (in minutes)"
-                required
-                value={newTask.duration}
-                onChange={(e) =>
-                  setNewTask({ ...newTask, duration: e.target.value })
-                }
-              />
+
+              {/* 👇 UPDATED: Duration Row with positive numbers only and unit selection */}
+              <div className="geo-inputs">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Amount"
+                  required
+                  value={newTask.durationValue}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, durationValue: e.target.value })
+                  }
+                />
+                <select
+                  value={newTask.durationUnit}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, durationUnit: e.target.value })
+                  }
+                >
+                  <option value="Minutes">Minutes</option>
+                  <option value="Hours">Hours</option>
+                  <option value="Days">Days</option>
+                </select>
+              </div>
+
               <select
                 value={newTask.category}
                 onChange={(e) =>
@@ -359,39 +415,25 @@ function VolunteerApp() {
                   </option>
                 ))}
               </select>
+
               <input
                 type="text"
-                placeholder="Street Address"
+                placeholder="Full Street Address (e.g. 300 Clarke Rd, London)"
                 required
                 value={newTask.address}
                 onChange={(e) =>
                   setNewTask({ ...newTask, address: e.target.value })
                 }
               />
-              <div className="geo-inputs">
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="Latitude"
-                  required
-                  value={newTask.lat}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, lat: e.target.value })
-                  }
-                />
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="Longitude"
-                  required
-                  value={newTask.lng}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, lng: e.target.value })
-                  }
-                />
-              </div>
-              <button type="submit" className="submit-btn">
-                Create Task
+
+              {/* Note: Lat & Lng are now hidden and processed automatically! */}
+
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={isSubmittingTask}
+              >
+                {isSubmittingTask ? "Locating on Map..." : "Create Task"}
               </button>
             </form>
             <button
@@ -404,7 +446,7 @@ function VolunteerApp() {
         </div>
       )}
 
-      {/* FULLY RESTORED AUTH MODAL */}
+      {/* AUTH MODAL */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
