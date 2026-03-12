@@ -18,7 +18,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// 👇 FIXED: Heart SVG now strictly uses currentColor for both stroke and fill
 const Icons = {
   Camera: () => (
     <svg className="svg-icon" viewBox="0 0 24 24">
@@ -683,7 +682,6 @@ function VolunteerApp() {
         )}
 
         <div className="view-toggle">
-          {/* 👇 FIXED: Clicking these main tabs resets the "Saved" filter so you never get stuck! */}
           <button
             className={viewMode === "list" && !showSavedOnly ? "active" : ""}
             onClick={() => {
@@ -760,6 +758,16 @@ function VolunteerApp() {
                       </div>
                       <h3>{task.title}</h3>
                       <p className="org-name">{task.organization}</p>
+                      {/* 👇 FIXED: Added Address and Time to the Applied Dashboard */}
+                      <p className="task-address">
+                        <Icons.MapPin /> {task.address}
+                      </p>
+                      <div className="badge-container">
+                        <span className="duration-badge macro">
+                          <Icons.Clock /> {formatDuration(task.duration)}
+                        </span>
+                      </div>
+
                       <button
                         className="withdraw-btn"
                         onClick={() => handleApply(task._id)}
@@ -781,9 +789,34 @@ function VolunteerApp() {
                   <div className="applicant-list">
                     {task.applicants.map((app) => (
                       <div key={app.userId} className="applicant-row">
-                        <span>
-                          {app.userName} ({app.status})
-                        </span>
+                        {/* 👇 FIXED: Added Clickable Email Address */}
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                          }}
+                        >
+                          <div>
+                            <strong>{app.userName}</strong>{" "}
+                            <span
+                              style={{ fontSize: "0.85rem", color: "#64748b" }}
+                            >
+                              ({app.status})
+                            </span>
+                          </div>
+                          <a
+                            href={`mailto:${app.userEmail}`}
+                            style={{
+                              color: "#2563eb",
+                              fontSize: "0.85rem",
+                              textDecoration: "none",
+                            }}
+                          >
+                            ✉️ {app.userEmail}
+                          </a>
+                        </div>
+
                         <div className="action-btns">
                           <button
                             onClick={() =>
@@ -860,7 +893,6 @@ function VolunteerApp() {
                         <Icons.Trash />
                       </button>
                     )}
-                    {/* 👇 FIXED: Heart is explicitly assigned the "saved" class so it turns red */}
                     <button
                       className={`heart-btn ${user?.savedTasks?.includes(task._id) ? "saved" : ""}`}
                       onClick={() => handleSaveTask(task._id)}
