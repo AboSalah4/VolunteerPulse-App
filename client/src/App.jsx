@@ -18,6 +18,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+// 👇 FIXED: Heart SVG now strictly uses currentColor for both stroke and fill
 const Icons = {
   Camera: () => (
     <svg className="svg-icon" viewBox="0 0 24 24">
@@ -64,8 +65,8 @@ const Icons = {
     <svg
       className="svg-icon"
       viewBox="0 0 24 24"
-      fill={filled ? "#ef4444" : "none"}
-      stroke={filled ? "#ef4444" : "currentColor"}
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
     >
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
     </svg>
@@ -559,7 +560,6 @@ function VolunteerApp() {
         </div>
       )}
 
-      {/* 👇 FIXED: Added className="auth-form" so inputs span 100% and stack vertically */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -591,7 +591,6 @@ function VolunteerApp() {
                   onChange={(e) => setName(e.target.value)}
                 />
               )}
-
               {!isResetMode && (
                 <input
                   type="email"
@@ -601,7 +600,6 @@ function VolunteerApp() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               )}
-
               {(!isForgotPassword || isResetMode) && (
                 <input
                   type="password"
@@ -611,7 +609,6 @@ function VolunteerApp() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               )}
-
               <button type="submit" className="submit-btn">
                 {isResetMode
                   ? "Update Password"
@@ -623,7 +620,6 @@ function VolunteerApp() {
               </button>
             </form>
 
-            {/* Toggle texts cleanly formatted below the form */}
             {!isResetMode && !isForgotPassword && (
               <p
                 className="toggle-text"
@@ -687,34 +683,52 @@ function VolunteerApp() {
         )}
 
         <div className="view-toggle">
+          {/* 👇 FIXED: Clicking these main tabs resets the "Saved" filter so you never get stuck! */}
           <button
-            className={viewMode === "list" ? "active" : ""}
-            onClick={() => setViewMode("list")}
+            className={viewMode === "list" && !showSavedOnly ? "active" : ""}
+            onClick={() => {
+              setViewMode("list");
+              setShowSavedOnly(false);
+            }}
           >
             <Icons.List /> List
           </button>
           <button
-            className={viewMode === "map" ? "active" : ""}
-            onClick={() => setViewMode("map")}
+            className={viewMode === "map" && !showSavedOnly ? "active" : ""}
+            onClick={() => {
+              setViewMode("map");
+              setShowSavedOnly(false);
+            }}
           >
             <Icons.Map /> Map
           </button>
           {user && (
             <button
-              className={viewMode === "applied" ? "active" : ""}
-              onClick={() => setViewMode("applied")}
+              className={
+                viewMode === "applied" && !showSavedOnly ? "active" : ""
+              }
+              onClick={() => {
+                setViewMode("applied");
+                setShowSavedOnly(false);
+              }}
             >
               <Icons.FileCheck /> My Apps
             </button>
           )}
           {user && (
             <button
-              className={viewMode === "manage" ? "active" : ""}
-              onClick={() => setViewMode("manage")}
+              className={
+                viewMode === "manage" && !showSavedOnly ? "active" : ""
+              }
+              onClick={() => {
+                setViewMode("manage");
+                setShowSavedOnly(false);
+              }}
             >
               <Icons.Settings /> Manage
             </button>
           )}
+
           {user && (
             <button
               className={`save-filter-btn ${showSavedOnly ? "active" : ""}`}
@@ -726,7 +740,7 @@ function VolunteerApp() {
           )}
         </div>
 
-        {viewMode === "applied" ? (
+        {viewMode === "applied" && !showSavedOnly ? (
           <div className="applied-section">
             <h2>My Volunteering Applications</h2>
             {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length ===
@@ -746,7 +760,6 @@ function VolunteerApp() {
                       </div>
                       <h3>{task.title}</h3>
                       <p className="org-name">{task.organization}</p>
-                      {/* 👇 FIXED: Using specific withdraw class instead of applied-btn */}
                       <button
                         className="withdraw-btn"
                         onClick={() => handleApply(task._id)}
@@ -758,7 +771,7 @@ function VolunteerApp() {
                 })}
             </div>
           </div>
-        ) : viewMode === "manage" ? (
+        ) : viewMode === "manage" && !showSavedOnly ? (
           <div className="manage-section">
             <h2>Management Dashboard</h2>
             <div className="task-grid">
@@ -847,8 +860,9 @@ function VolunteerApp() {
                         <Icons.Trash />
                       </button>
                     )}
+                    {/* 👇 FIXED: Heart is explicitly assigned the "saved" class so it turns red */}
                     <button
-                      className="heart-btn"
+                      className={`heart-btn ${user?.savedTasks?.includes(task._id) ? "saved" : ""}`}
                       onClick={() => handleSaveTask(task._id)}
                     >
                       <Icons.Heart

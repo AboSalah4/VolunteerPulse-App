@@ -247,6 +247,9 @@ body {
 }
 
 /* --- INTEREST CHIPS (LOCKED COLORS) --- */
+.interests-section {
+  margin-bottom: 25px;
+} /* 👇 FIXED: Added breathing room to the whole section */
 .chips-container {
   display: flex;
   flex-wrap: wrap;
@@ -268,6 +271,8 @@ body {
   background-color: #2563eb !important;
   color: white !important;
 }
+
+/* 👇 FIXED: Created spacing so it doesn't touch the tabs */
 .save-interests-btn {
   background-color: #2563eb !important;
   color: white !important;
@@ -276,7 +281,7 @@ body {
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
-  margin-top: 5px;
+  margin-bottom: 10px;
 }
 
 /* --- BUTTONS (LOCKED COLORS) --- */
@@ -346,6 +351,7 @@ body {
   margin-top: 15px;
 }
 
+/* 👇 FIXED: Enforces red color globally when heart is saved */
 .heart-btn,
 .delete-btn {
   position: absolute;
@@ -358,6 +364,13 @@ body {
   transition:
     transform 0.2s,
     color 0.2s;
+}
+.heart-btn.saved {
+  color: #ef4444 !important;
+}
+.heart-btn.saved svg {
+  fill: #ef4444 !important;
+  stroke: #ef4444 !important;
 }
 .heart-btn {
   right: 15px;
@@ -510,7 +523,7 @@ body {
   gap: 8px;
 }
 
-/* 👇 NEW: PERFECT MOBILE RESPONSIVENESS */
+/* --- RESPONSIVE MEDIA QUERIES --- */
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
@@ -534,7 +547,6 @@ body {
     justify-content: center;
   }
 
-  /* Turns the tabs into a clean 2-column grid instead of messy wrapping */
   .view-toggle {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -545,7 +557,7 @@ body {
   }
   .save-filter-btn {
     grid-column: span 2;
-  } /* Makes the last button stretch full width */
+  }
 
   .search-filter-container {
     flex-direction: column;
