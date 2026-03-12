@@ -632,36 +632,21 @@ function VolunteerApp() {
         </div>
 
         {/* 👇 NEW: The Search Bar UI added inside the filter section */}
-        <div
-          className="filter-section"
-          style={{
-            display: "flex",
-            gap: "15px",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="search-filter-container">
           <input
             type="text"
             placeholder="🔍 Search tasks or organizations..."
-            className="search-bar"
+            className="clean-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-              fontSize: "1rem",
-            }}
           />
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div className="time-filter-wrapper">
             <label>Time available:</label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="time-select"
+              className="clean-select"
             >
               <option value="15">15 Mins</option>
               <option value="60">1 Hour</option>
