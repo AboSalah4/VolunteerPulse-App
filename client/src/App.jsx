@@ -24,6 +24,9 @@ function VolunteerApp() {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState(999999);
 
+  // 👇 NEW: State to hold the letters the user is typing
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -144,13 +147,12 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 NEW: Handle Task Deletion
   const handleDeleteTask = async (taskId) => {
     if (window.confirm("Are you sure you want to delete this task?")) {
       try {
         await axios.delete(`${API_URL}/api/tasks/${taskId}`);
         setSuccessMsg("Task deleted!");
-        fetchTasks(); // Refresh the list
+        fetchTasks();
         setTimeout(() => setSuccessMsg(""), 2000);
       } catch (err) {
         console.error("Failed to delete task", err);
@@ -292,9 +294,23 @@ function VolunteerApp() {
     return `${mins / 1440} Days`;
   };
 
-  const filteredTasks = showSavedOnly
-    ? tasks.filter((t) => user?.savedTasks?.includes(t._id))
-    : tasks;
+  // 👇 UPDATED: The Real-Time Filtering Logic!
+  const filteredTasks = tasks.filter((t) => {
+    // 1. Check if it matches the "Show Saved" button
+    const matchesSaved = showSavedOnly
+      ? user?.savedTasks?.includes(t._id)
+      : true;
+
+    // 2. Check if the title OR organization matches what is typed in the search bar
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch =
+      t.title.toLowerCase().includes(searchLower) ||
+      t.organization.toLowerCase().includes(searchLower);
+
+    // 3. Only keep the task if it passes both checks
+    return matchesSaved && matchesSearch;
+  });
+
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     const aMatch = user?.interests?.includes(a.category) ? 1 : 0;
     const bMatch = user?.interests?.includes(b.category) ? 1 : 0;
@@ -615,24 +631,57 @@ function VolunteerApp() {
           )}
         </div>
 
-        <div className="filter-section">
-          <label>Time available:</label>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="time-select"
-          >
-            <option value="15">15 Mins</option>
-            <option value="60">1 Hour</option>
-            <option value="999999">Show All</option>
-          </select>
+        {/* 👇 NEW: The Search Bar UI added inside the filter section */}
+        <div
+          className="filter-section"
+          style={{
+            display: "flex",
+            gap: "15px",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="🔍 Search tasks or organizations..."
+            className="search-bar"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "1rem",
+            }}
+          />
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <label>Time available:</label>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="time-select"
+            >
+              <option value="15">15 Mins</option>
+              <option value="60">1 Hour</option>
+              <option value="999999">Show All</option>
+            </select>
+          </div>
         </div>
 
         {viewMode === "list" ? (
           <div className="task-list">
+            {sortedTasks.length === 0 && (
+              <p
+                style={{ textAlign: "center", width: "100%", padding: "20px" }}
+              >
+                No tasks found matching your search.
+              </p>
+            )}
+
             {sortedTasks.map((task) => (
               <div key={task._id} className="task-card">
-                {/* 👇 NEW: Delete Task Button */}
                 {user && (
                   <button
                     className="delete-btn"
@@ -707,7 +756,6 @@ function VolunteerApp() {
                     >
                       {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
                     </button>
-                    {/* Map Popup Delete Button */}
                     {user && (
                       <button
                         onClick={() => handleDeleteTask(task._id)}
