@@ -628,7 +628,7 @@ body {
 .delete-btn {
   position: absolute !important;
   top: 15px !important;
-  left: 15px !important;
+  right: 45px !important; /* 👈 Moved to the right side, next to the heart! */
   background-color: transparent !important;
   border: none !important;
   width: auto !important;
