@@ -23,13 +23,15 @@ function VolunteerApp() {
 
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState(999999);
+
+  // Auth Modal States
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
   const [resetToken, setResetToken] = useState("");
 
-  // 👇 NEW: State for the Create Task Form
+  // Create Task Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
@@ -86,7 +88,7 @@ function VolunteerApp() {
     fetchTasks();
   }, [filter]);
 
-  // 👇 NEW: Handle Task Creation
+  // Handle Task Creation
   const handleCreateTask = async (e) => {
     e.preventDefault();
     try {
@@ -102,7 +104,7 @@ function VolunteerApp() {
         lat: "",
         lng: "",
       });
-      fetchTasks(); // Refresh the list
+      fetchTasks();
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
       setError("Failed to create task.");
@@ -128,6 +130,35 @@ function VolunteerApp() {
       }
     } catch (err) {
       setError(err.response?.data?.message || "Auth failed");
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    try {
+      const res = await axios.post(`${API_URL}/api/forgot-password`, { email });
+      setSuccessMsg(res.data.message);
+    } catch (err) {
+      setError(err.response?.data?.message || "Error sending reset link");
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    try {
+      await axios.post(`${API_URL}/api/reset-password/${resetToken}`, {
+        password,
+      });
+      setSuccessMsg("Success! Password updated. You can now log in.");
+      setIsResetMode(false);
+      setResetToken("");
+      window.history.pushState({}, "", "/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid or expired token");
     }
   };
 
@@ -373,7 +404,7 @@ function VolunteerApp() {
         </div>
       )}
 
-      {/* AUTH MODAL (Restored) */}
+      {/* FULLY RESTORED AUTH MODAL */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -381,40 +412,109 @@ function VolunteerApp() {
               {isResetMode
                 ? "New Password"
                 : isForgotPassword
-                  ? "Reset"
+                  ? "Reset Password"
                   : isRegistering
                     ? "Register"
                     : "Login"}
             </h2>
-            <form onSubmit={handleAuth}>
-              {isRegistering && (
+            {error && <p style={{ color: "red" }}>{error}</p>}
+            {successMsg && (
+              <p style={{ color: "green", marginBottom: "10px" }}>
+                {successMsg}
+              </p>
+            )}
+
+            {isResetMode ? (
+              <form onSubmit={handleResetPassword}>
                 <input
-                  type="text"
-                  placeholder="Name"
+                  type="password"
+                  placeholder="New Password"
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
-              )}
-              <input
-                type="email"
-                placeholder="Email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button type="submit" className="submit-btn">
-                {isRegistering ? "Sign Up" : "Log In"}
-              </button>
-            </form>
-            <button className="close-btn" onClick={() => setShowLogin(false)}>
+                <button type="submit" className="submit-btn">
+                  Update
+                </button>
+              </form>
+            ) : isForgotPassword ? (
+              <form onSubmit={handleForgotPassword}>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <button type="submit" className="submit-btn">
+                  Send Link
+                </button>
+                <p
+                  className="toggle-text"
+                  onClick={() => setIsForgotPassword(false)}
+                >
+                  Back to Login
+                </p>
+              </form>
+            ) : (
+              <form onSubmit={handleAuth}>
+                {isRegistering && (
+                  <input
+                    name="name"
+                    type="text"
+                    placeholder="Name"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                )}
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button type="submit" className="submit-btn">
+                  {isRegistering ? "Sign Up" : "Log In"}
+                </button>
+                {!isRegistering && (
+                  <p
+                    className="toggle-text"
+                    onClick={() => setIsForgotPassword(true)}
+                  >
+                    Forgot Password?
+                  </p>
+                )}
+              </form>
+            )}
+
+            {!isResetMode && !isForgotPassword && (
+              <p
+                className="toggle-text"
+                onClick={() => setIsRegistering(!isRegistering)}
+              >
+                {isRegistering ? "Back to Login" : "Need an account? Register"}
+              </p>
+            )}
+
+            <button
+              className="close-btn"
+              onClick={() => {
+                setShowLogin(false);
+                setIsForgotPassword(false);
+                setIsRegistering(false);
+              }}
+            >
               Close
             </button>
           </div>
@@ -496,6 +596,7 @@ function VolunteerApp() {
                 <h3>{task.title}</h3>
                 <p className="org-name">{task.organization}</p>
                 <p className="task-address">📍 {task.address}</p>
+                <span className="category-tag">{task.category}</span>
                 <div className="badge-container">
                   <span className="duration-badge macro">
                     ⏱ {formatDuration(task.duration)}
@@ -530,6 +631,10 @@ function VolunteerApp() {
                     <strong>{task.title}</strong>
                     <br />
                     {task.organization}
+                    <br />
+                    <span style={{ fontSize: "12px", color: "#666" }}>
+                      {task.address}
+                    </span>
                     <br />
                     <button
                       onClick={() => handleSaveTask(task._id)}
