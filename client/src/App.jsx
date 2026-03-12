@@ -23,25 +23,30 @@ function VolunteerApp() {
 
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState(999999);
-
-  // Auth & Modal State (FULLY RESTORED)
   const [showLogin, setShowLogin] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
   const [resetToken, setResetToken] = useState("");
 
-  // Form Data State
+  // 👇 NEW: State for the Create Task Form
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: "",
+    organization: "",
+    duration: "",
+    category: "Community",
+    address: "",
+    lat: "",
+    lng: "",
+  });
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-
-  // Status Messages
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [uploading, setUploading] = useState(false);
-
-  // App Features State
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
@@ -55,7 +60,6 @@ function VolunteerApp() {
   ];
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
-  // Check URL for reset token
   useEffect(() => {
     const path = window.location.pathname;
     if (path.includes("/reset-password/")) {
@@ -66,21 +70,45 @@ function VolunteerApp() {
     }
   }, []);
 
-  // Load interests on login
   useEffect(() => {
     if (user && user.interests) setSelectedInterests(user.interests);
     else setSelectedInterests([]);
   }, [user]);
 
-  // Fetch Tasks
-  useEffect(() => {
+  const fetchTasks = () => {
     axios
       .get(`${API_URL}/api/tasks?maxTime=${filter}`)
       .then((res) => setTasks(res.data))
       .catch((err) => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchTasks();
   }, [filter]);
 
-  // Handlers
+  // 👇 NEW: Handle Task Creation
+  const handleCreateTask = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API_URL}/api/tasks`, newTask);
+      setSuccessMsg("Task created successfully!");
+      setShowCreateModal(false);
+      setNewTask({
+        title: "",
+        organization: "",
+        duration: "",
+        category: "Community",
+        address: "",
+        lat: "",
+        lng: "",
+      });
+      fetchTasks(); // Refresh the list
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError("Failed to create task.");
+    }
+  };
+
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
@@ -103,35 +131,6 @@ function VolunteerApp() {
     }
   };
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccessMsg("");
-    try {
-      const res = await axios.post(`${API_URL}/api/forgot-password`, { email });
-      setSuccessMsg(res.data.message);
-    } catch (err) {
-      setError(err.response?.data?.message || "Error sending reset link");
-    }
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccessMsg("");
-    try {
-      await axios.post(`${API_URL}/api/reset-password/${resetToken}`, {
-        password,
-      });
-      setSuccessMsg("Success! Password updated. You can now log in.");
-      setIsResetMode(false);
-      setResetToken("");
-      window.history.pushState({}, "", "/");
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid or expired token");
-    }
-  };
-
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -150,7 +149,6 @@ function VolunteerApp() {
       setSuccessMsg("Picture updated!");
       setTimeout(() => setSuccessMsg(""), 2000);
     } catch (err) {
-      console.error("Upload failed", err);
       setError("Upload failed");
     } finally {
       setUploading(false);
@@ -158,11 +156,9 @@ function VolunteerApp() {
   };
 
   const toggleInterest = (category) => {
-    if (selectedInterests.includes(category)) {
+    if (selectedInterests.includes(category))
       setSelectedInterests(selectedInterests.filter((c) => c !== category));
-    } else {
-      setSelectedInterests([...selectedInterests, category]);
-    }
+    else setSelectedInterests([...selectedInterests, category]);
   };
 
   const saveInterests = async () => {
@@ -220,7 +216,6 @@ function VolunteerApp() {
   const filteredTasks = showSavedOnly
     ? tasks.filter((t) => user?.savedTasks?.includes(t._id))
     : tasks;
-
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     const aMatch = user?.interests?.includes(a.category) ? 1 : 0;
     const bMatch = user?.interests?.includes(b.category) ? 1 : 0;
@@ -268,6 +263,14 @@ function VolunteerApp() {
           )}
         </div>
         <div className="header-right">
+          {user && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="create-task-btn"
+            >
+              ＋ Post Task
+            </button>
+          )}
           {user ? (
             <button onClick={logout} className="logout-btn">
               Logout
@@ -280,7 +283,97 @@ function VolunteerApp() {
         </div>
       </header>
 
-      {/* FULLY RESTORED MODAL */}
+      {/* CREATE TASK MODAL */}
+      {showCreateModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Post New Opportunity</h2>
+            <form onSubmit={handleCreateTask} className="task-form">
+              <input
+                type="text"
+                placeholder="Task Title (e.g. Garden Help)"
+                required
+                value={newTask.title}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, title: e.target.value })
+                }
+              />
+              <input
+                type="text"
+                placeholder="Organization Name"
+                required
+                value={newTask.organization}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, organization: e.target.value })
+                }
+              />
+              <input
+                type="number"
+                placeholder="Duration (in minutes)"
+                required
+                value={newTask.duration}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, duration: e.target.value })
+                }
+              />
+              <select
+                value={newTask.category}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, category: e.target.value })
+                }
+              >
+                {AVAILABLE_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Street Address"
+                required
+                value={newTask.address}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, address: e.target.value })
+                }
+              />
+              <div className="geo-inputs">
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Latitude"
+                  required
+                  value={newTask.lat}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, lat: e.target.value })
+                  }
+                />
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Longitude"
+                  required
+                  value={newTask.lng}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, lng: e.target.value })
+                  }
+                />
+              </div>
+              <button type="submit" className="submit-btn">
+                Create Task
+              </button>
+            </form>
+            <button
+              className="close-btn"
+              onClick={() => setShowCreateModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* AUTH MODAL (Restored) */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -288,109 +381,40 @@ function VolunteerApp() {
               {isResetMode
                 ? "New Password"
                 : isForgotPassword
-                  ? "Reset Password"
+                  ? "Reset"
                   : isRegistering
                     ? "Register"
                     : "Login"}
             </h2>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            {successMsg && (
-              <p style={{ color: "green", marginBottom: "10px" }}>
-                {successMsg}
-              </p>
-            )}
-
-            {isResetMode ? (
-              <form onSubmit={handleResetPassword}>
+            <form onSubmit={handleAuth}>
+              {isRegistering && (
                 <input
-                  type="password"
-                  placeholder="New Password"
+                  type="text"
+                  placeholder="Name"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
-                <button type="submit" className="submit-btn">
-                  Update
-                </button>
-              </form>
-            ) : isForgotPassword ? (
-              <form onSubmit={handleForgotPassword}>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <button type="submit" className="submit-btn">
-                  Send Link
-                </button>
-                <p
-                  className="toggle-text"
-                  onClick={() => setIsForgotPassword(false)}
-                >
-                  Back to Login
-                </p>
-              </form>
-            ) : (
-              <form onSubmit={handleAuth}>
-                {isRegistering && (
-                  <input
-                    name="name"
-                    type="text"
-                    placeholder="Name"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                )}
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="Password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit" className="submit-btn">
-                  {isRegistering ? "Sign Up" : "Log In"}
-                </button>
-                {!isRegistering && (
-                  <p
-                    className="toggle-text"
-                    onClick={() => setIsForgotPassword(true)}
-                  >
-                    Forgot Password?
-                  </p>
-                )}
-              </form>
-            )}
-
-            {!isResetMode && !isForgotPassword && (
-              <p
-                className="toggle-text"
-                onClick={() => setIsRegistering(!isRegistering)}
-              >
-                {isRegistering ? "Back to Login" : "Need an account? Register"}
-              </p>
-            )}
-
-            <button
-              className="close-btn"
-              onClick={() => {
-                setShowLogin(false);
-                setIsForgotPassword(false);
-                setIsRegistering(false);
-              }}
-            >
+              )}
+              <input
+                type="email"
+                placeholder="Email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button type="submit" className="submit-btn">
+                {isRegistering ? "Sign Up" : "Log In"}
+              </button>
+            </form>
+            <button className="close-btn" onClick={() => setShowLogin(false)}>
               Close
             </button>
           </div>
@@ -398,6 +422,8 @@ function VolunteerApp() {
       )}
 
       <div className="main-content">
+        {successMsg && <div className="floating-success">{successMsg}</div>}
+
         {user && (
           <div className="interests-section">
             <h3>Personalize Your Feed</h3>
@@ -415,17 +441,6 @@ function VolunteerApp() {
             <button className="save-interests-btn" onClick={saveInterests}>
               Save Interests
             </button>
-            {successMsg === "Interests saved!" && (
-              <span
-                style={{
-                  color: "green",
-                  marginLeft: "10px",
-                  fontWeight: "bold",
-                }}
-              >
-                ✓ Saved!
-              </span>
-            )}
           </div>
         )}
 
@@ -442,7 +457,6 @@ function VolunteerApp() {
           >
             🗺️ Map
           </button>
-
           {user && (
             <button
               className={`save-filter-btn ${showSavedOnly ? "active" : ""}`}
@@ -476,20 +490,17 @@ function VolunteerApp() {
                 >
                   {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
                 </button>
-
                 {user?.interests?.includes(task.category) && (
                   <div className="recommended-badge">⭐ Recommended</div>
                 )}
                 <h3>{task.title}</h3>
                 <p className="org-name">{task.organization}</p>
                 <p className="task-address">📍 {task.address}</p>
-                <span className="category-tag">{task.category}</span>
                 <div className="badge-container">
                   <span className="duration-badge macro">
                     ⏱ {formatDuration(task.duration)}
                   </span>
                 </div>
-
                 <button
                   className={
                     user?.appliedTasks?.includes(task._id)
@@ -519,10 +530,6 @@ function VolunteerApp() {
                     <strong>{task.title}</strong>
                     <br />
                     {task.organization}
-                    <br />
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                      {task.address}
-                    </span>
                     <br />
                     <button
                       onClick={() => handleSaveTask(task._id)}
