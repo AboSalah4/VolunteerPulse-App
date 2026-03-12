@@ -635,7 +635,7 @@ function VolunteerApp() {
         <div className="search-filter-container">
           <input
             type="text"
-            placeholder="🔍 Search tasks or organizations..."
+            placeholder=" Search tasks or organizations..."
             className="clean-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
