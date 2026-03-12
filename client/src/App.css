@@ -1,4 +1,4 @@
-/* --- VITE DEFAULT OVERRIDE (Fixes the half-empty desktop screen) --- */
+/* --- VITE DEFAULT OVERRIDE --- */
 #root {
   max-width: 100% !important;
   width: 100% !important;
@@ -93,6 +93,44 @@ body {
 .header-right {
   display: flex;
   gap: 10px;
+}
+
+/* 👇 NEW: BADGE & PULSE TRACKER STYLES */
+.user-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pulse-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border: 1px solid;
+  width: fit-content;
+}
+.badge-gold {
+  background: #fef08a;
+  color: #a16207;
+  border-color: #fde047;
+}
+.badge-silver {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+.badge-bronze {
+  background: #ffedd5;
+  color: #b45309;
+  border-color: #fdba74;
+}
+.badge-starter {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
 }
 
 /* --- TABS (VIEW TOGGLE) --- */
@@ -246,10 +284,10 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* --- INTEREST CHIPS (LOCKED COLORS) --- */
+/* --- INTEREST CHIPS --- */
 .interests-section {
   margin-bottom: 25px;
-} /* 👇 FIXED: Added breathing room to the whole section */
+}
 .chips-container {
   display: flex;
   flex-wrap: wrap;
@@ -271,8 +309,6 @@ body {
   background-color: #2563eb !important;
   color: white !important;
 }
-
-/* 👇 FIXED: Created spacing so it doesn't touch the tabs */
 .save-interests-btn {
   background-color: #2563eb !important;
   color: white !important;
@@ -284,7 +320,7 @@ body {
   margin-bottom: 10px;
 }
 
-/* --- BUTTONS (LOCKED COLORS) --- */
+/* --- BUTTONS --- */
 .login-btn,
 .submit-btn {
   background-color: #2563eb !important;
@@ -351,7 +387,6 @@ body {
   margin-top: 15px;
 }
 
-/* 👇 FIXED: Enforces red color globally when heart is saved */
 .heart-btn,
 .delete-btn {
   position: absolute;

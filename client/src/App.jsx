@@ -419,6 +419,21 @@ function VolunteerApp() {
     return bMatch - aMatch;
   });
 
+  // 👇 NEW: Gamification Logic for VP-Q21 & VP-Q22
+  const getPulseData = (mins) => {
+    const hours = Math.floor((mins || 0) / 60);
+    if (hours >= 50)
+      return { icon: "🏆", title: "Gold Level", css: "badge-gold" };
+    if (hours >= 20)
+      return { icon: "🥈", title: "Silver Level", css: "badge-silver" };
+    if (hours >= 5)
+      return { icon: "🥉", title: "Bronze Level", css: "badge-bronze" };
+    return { icon: "🌱", title: "Rising Star", css: "badge-starter" };
+  };
+
+  const pulseData = getPulseData(user?.totalVolunteerMinutes);
+  const totalHours = Math.floor((user?.totalVolunteerMinutes || 0) / 60);
+
   return (
     <div className="container">
       <header className="app-header">
@@ -447,9 +462,19 @@ function VolunteerApp() {
                   />
                 </label>
               </div>
-              <span className="welcome-text">
-                Welcome, <strong>{user.name}</strong>!
-              </span>
+
+              {/* 👇 NEW: Rendering the Pulse Tracker Badge next to the user's name */}
+              <div className="user-stats">
+                <span className="welcome-text">
+                  Welcome, <strong>{user.name}</strong>!
+                </span>
+                <div
+                  className={`pulse-badge ${pulseData.css}`}
+                  title={`${user.totalVolunteerMinutes || 0} Total Minutes Volunteered`}
+                >
+                  {pulseData.icon} {totalHours} Hours ({pulseData.title})
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -758,7 +783,6 @@ function VolunteerApp() {
                       </div>
                       <h3>{task.title}</h3>
                       <p className="org-name">{task.organization}</p>
-                      {/* 👇 FIXED: Added Address and Time to the Applied Dashboard */}
                       <p className="task-address">
                         <Icons.MapPin /> {task.address}
                       </p>
@@ -789,7 +813,6 @@ function VolunteerApp() {
                   <div className="applicant-list">
                     {task.applicants.map((app) => (
                       <div key={app.userId} className="applicant-row">
-                        {/* 👇 FIXED: Added Clickable Email Address */}
                         <div
                           style={{
                             display: "flex",
