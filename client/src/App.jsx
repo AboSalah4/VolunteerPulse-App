@@ -18,7 +18,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// 👇 NEW: Professional SVG Icon Library (No more emojis!)
 const Icons = {
   Camera: () => (
     <svg className="svg-icon" viewBox="0 0 24 24">
@@ -560,6 +559,7 @@ function VolunteerApp() {
         </div>
       )}
 
+      {/* 👇 FIXED: Added className="auth-form" so inputs span 100% and stack vertically */}
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -567,13 +567,22 @@ function VolunteerApp() {
               {isResetMode
                 ? "New Password"
                 : isForgotPassword
-                  ? "Reset"
+                  ? "Reset Password"
                   : isRegistering
                     ? "Register"
                     : "Login"}
             </h2>
-            <form onSubmit={handleAuth}>
-              {isRegistering && (
+            <form
+              className="auth-form"
+              onSubmit={
+                isResetMode
+                  ? handleResetPassword
+                  : isForgotPassword
+                    ? handleForgotPassword
+                    : handleAuth
+              }
+            >
+              {isRegistering && !isResetMode && !isForgotPassword && (
                 <input
                   type="text"
                   placeholder="Name"
@@ -582,39 +591,72 @@ function VolunteerApp() {
                   onChange={(e) => setName(e.target.value)}
                 />
               )}
-              <input
-                type="email"
-                placeholder="Email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button type="submit" className="submit-btn">
-                {isRegistering ? "Sign Up" : "Log In"}
-              </button>
-              {!isRegistering && (
-                <p
-                  className="toggle-text"
-                  onClick={() => setIsForgotPassword(true)}
-                >
-                  Forgot Password?
-                </p>
+
+              {!isResetMode && (
+                <input
+                  type="email"
+                  placeholder="Email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               )}
+
+              {(!isForgotPassword || isResetMode) && (
+                <input
+                  type="password"
+                  placeholder="Password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              )}
+
+              <button type="submit" className="submit-btn">
+                {isResetMode
+                  ? "Update Password"
+                  : isForgotPassword
+                    ? "Send Link"
+                    : isRegistering
+                      ? "Sign Up"
+                      : "Log In"}
+              </button>
             </form>
-            <p
-              className="toggle-text"
-              onClick={() => setIsRegistering(!isRegistering)}
+
+            {/* Toggle texts cleanly formatted below the form */}
+            {!isResetMode && !isForgotPassword && (
+              <p
+                className="toggle-text"
+                onClick={() => setIsForgotPassword(true)}
+              >
+                Forgot Password?
+              </p>
+            )}
+            {!isResetMode && isForgotPassword && (
+              <p
+                className="toggle-text"
+                onClick={() => setIsForgotPassword(false)}
+              >
+                Back to Login
+              </p>
+            )}
+            {!isResetMode && !isForgotPassword && (
+              <p
+                className="toggle-text"
+                onClick={() => setIsRegistering(!isRegistering)}
+              >
+                {isRegistering ? "Back to Login" : "Need an account? Register"}
+              </p>
+            )}
+
+            <button
+              className="close-btn"
+              onClick={() => {
+                setShowLogin(false);
+                setIsForgotPassword(false);
+                setIsRegistering(false);
+              }}
             >
-              {isRegistering ? "Back to Login" : "Need an account? Register"}
-            </p>
-            <button className="close-btn" onClick={() => setShowLogin(false)}>
               Close
             </button>
           </div>
@@ -704,8 +746,9 @@ function VolunteerApp() {
                       </div>
                       <h3>{task.title}</h3>
                       <p className="org-name">{task.organization}</p>
+                      {/* 👇 FIXED: Using specific withdraw class instead of applied-btn */}
                       <button
-                        className="applied-btn"
+                        className="withdraw-btn"
                         onClick={() => handleApply(task._id)}
                       >
                         Withdraw
