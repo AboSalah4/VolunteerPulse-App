@@ -41,13 +41,19 @@ const UserSchema = new mongoose.Schema({
   profilePic: { type: String, default: "" },
   interests: { type: [String], default: [] },
   appliedTasks: [{ type: String }],
-  savedTasks: [{ type: String }], // 👈 NEW: Array to store bookmarked Task IDs
+  savedTasks: [{ type: String }],
 });
 const User = mongoose.model("User", UserSchema);
 
 // --- SEED DATA ---
 const seedTasks = async () => {
-  await Task.deleteMany({});
+  // 👇 FIXED: Only seed if the database is empty so we don't delete user-created tasks!
+  const count = await Task.countDocuments();
+  if (count > 0) {
+    console.log("🌲 Tasks already exist. Skipping seed.");
+    return;
+  }
+
   await Task.insertMany([
     {
       title: "Sort Books",
@@ -155,6 +161,27 @@ mongoose.connection.once("open", seedTasks);
 
 // --- ROUTES ---
 
+// 👇 NEW: Create a new Task from the frontend form (VP-F01)
+app.post("/api/tasks", async (req, res) => {
+  try {
+    const newTask = new Task(req.body);
+    await newTask.save();
+    res.status(201).json(newTask);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create task" });
+  }
+});
+
+// 👇 Retained existing GET route
+app.get("/api/tasks", async (req, res) => {
+  const { maxTime } = req.query;
+  const tasks = await Task.find({
+    duration: { $lte: parseInt(maxTime) || 999999 },
+  });
+  res.json(tasks);
+});
+
+// 👇 Retained all Auth, Application, and Cloudinary routes
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -170,7 +197,7 @@ app.post("/api/login", async (req, res) => {
         profilePic: user.profilePic,
         interests: user.interests,
         appliedTasks: user.appliedTasks,
-        savedTasks: user.savedTasks, // 👈 NEW: Return saved tasks on login
+        savedTasks: user.savedTasks,
       },
     });
   } catch (err) {
@@ -178,14 +205,12 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// 👈 NEW ROUTE: Save for later logic
 app.post("/api/save-task", async (req, res) => {
   try {
     const { email, taskId } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Toggle logic: If already saved, remove it. If not, add it.
     if (user.savedTasks.includes(taskId)) {
       user.savedTasks = user.savedTasks.filter((id) => id !== taskId);
     } else {
@@ -199,23 +224,12 @@ app.post("/api/save-task", async (req, res) => {
   }
 });
 
-// (Keep all other routes: register, update-interests, apply-task, etc. exactly the same)
-app.get("/api/tasks", async (req, res) => {
-  const { maxTime } = req.query;
-  const tasks = await Task.find({
-    duration: { $lte: parseInt(maxTime) || 999999 },
-  });
-  res.json(tasks);
-});
-
-//  UPDATED ROUTE: Toggle Apply / Un-apply
 app.post("/api/apply-task", async (req, res) => {
   try {
     const { email, taskId } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // If already applied, remove it (Un-apply). If not, add it (Apply).
     if (user.appliedTasks.includes(taskId)) {
       user.appliedTasks = user.appliedTasks.filter((id) => id !== taskId);
     } else {
