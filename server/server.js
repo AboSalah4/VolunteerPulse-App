@@ -111,14 +111,16 @@ app.post("/api/update-status", async (req, res) => {
     const task = await Task.findById(taskId);
     const applicant = task.applicants.find((a) => a.userId === userId);
 
+    let updatedPoints = undefined;
+
     if (applicant) {
-      // 👇 FIXED LOGIC: Only award points if marking as "Completed" for the first time
       if (status === "Completed" && applicant.status !== "Completed") {
         const student = await User.findById(userId);
         if (student) {
           student.totalVolunteerMinutes =
             (student.totalVolunteerMinutes || 0) + task.duration;
           await student.save();
+          updatedPoints = student.totalVolunteerMinutes; // 👇 NEW: Track the exact updated points
         }
       }
 
@@ -131,7 +133,14 @@ app.post("/api/update-status", async (req, res) => {
         message: `Your application for "${task.title}" is now ${status.toLowerCase()}.`,
       });
     }
-    res.status(200).json({ message: "Status updated" });
+    // 👇 NEW: Send the new points back to the frontend
+    res
+      .status(200)
+      .json({
+        message: "Status updated",
+        updatedPoints,
+        verifiedUserId: userId,
+      });
   } catch (err) {
     res.status(500).json({ error: "Update failed" });
   }

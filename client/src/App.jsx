@@ -240,7 +240,7 @@ function VolunteerApp() {
 
   const handleUpdateStatus = async (taskId, userId, status) => {
     try {
-      await axios.post(`${API_URL}/api/update-status`, {
+      const res = await axios.post(`${API_URL}/api/update-status`, {
         taskId,
         userId,
         status,
@@ -250,6 +250,15 @@ function VolunteerApp() {
           ? "Task verified and points awarded!"
           : `Applicant ${status}!`,
       );
+
+      // 👇 FIXED LOGIC: Instantly updates the badge if you are testing on your own account!
+      if (
+        res.data.updatedPoints !== undefined &&
+        res.data.verifiedUserId === user.id
+      ) {
+        login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
+      }
+
       fetchMyTasks();
       fetchTasks();
       setTimeout(() => setSuccessMsg(""), 3000);
@@ -423,7 +432,6 @@ function VolunteerApp() {
     return bMatch - aMatch;
   });
 
-  // 👇 FIXED LOGIC: Gold Badge requires 720 Hours (30 Days)
   const getPulseData = (mins) => {
     const hours = Math.floor((mins || 0) / 60);
     if (hours >= 720)
@@ -798,7 +806,6 @@ function VolunteerApp() {
                         </span>
                       </div>
 
-                      {/* 👇 FIXED: You cannot withdraw if the task is already "Completed" */}
                       {status !== "Completed" && (
                         <button
                           className="withdraw-btn"
@@ -850,7 +857,6 @@ function VolunteerApp() {
                         </div>
 
                         <div className="action-btns">
-                          {/* 👇 FIXED: Added a 3-Step verification flow (Pending -> Accepted -> Completed) */}
                           {app.status === "Pending" && (
                             <>
                               <button
