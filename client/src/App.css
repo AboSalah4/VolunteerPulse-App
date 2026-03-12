@@ -1,10 +1,19 @@
+/* --- VITE DEFAULT OVERRIDE (Fixes the half-empty desktop screen) --- */
+#root {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
 /* --- RESET & THEME FIX --- */
 * {
   box-sizing: border-box;
 }
 body {
-  background-color: #f8fafc;
-  color: #1e293b;
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
   margin: 0;
   font-family: "Inter", sans-serif;
 }
@@ -26,6 +35,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  width: 100%;
 }
 
 /* --- HEADER --- */
@@ -38,9 +48,10 @@ body {
   margin-bottom: 30px;
 }
 .header-left h1 {
-  color: #2563eb;
+  color: #2563eb !important;
   font-size: 1.8rem;
   margin: 0;
+  font-weight: 800;
 }
 .user-profile-header {
   display: flex;
@@ -79,6 +90,10 @@ body {
   width: 12px;
   height: 12px;
 }
+.header-right {
+  display: flex;
+  gap: 10px;
+}
 
 /* --- TABS (VIEW TOGGLE) --- */
 .view-toggle {
@@ -90,13 +105,14 @@ body {
 .view-toggle button {
   padding: 10px 15px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
   background-color: white !important;
   cursor: pointer;
   font-weight: 600;
   color: #334155 !important;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
 }
@@ -139,6 +155,7 @@ body {
   background-repeat: no-repeat;
   background-position: 12px center;
   background-size: 18px;
+  width: 100%;
 }
 .clean-search-input::placeholder {
   color: #94a3b8 !important;
@@ -157,29 +174,34 @@ body {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #cbd5e1 !important;
+  cursor: pointer;
 }
 
-/* --- TASK CARDS --- */
-.task-list {
+/* --- TASK CARDS & GRID --- */
+.task-list,
+.task-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
+  width: 100%;
 }
-.task-card {
+.task-card,
+.manage-card {
   background: white !important;
   padding: 24px;
   border-radius: 16px;
   border: 1px solid #e2e8f0 !important;
   position: relative;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   color: #1e293b !important;
 }
-.task-card h3 {
+.task-card h3,
+.manage-card h3 {
   color: #0f172a !important;
   margin-top: 0;
   margin-bottom: 8px;
   font-size: 1.25rem;
-  padding-right: 55px; /* 👇 FIXED: Stops text from overlapping heart/trash icons */
+  padding-right: 55px;
   line-height: 1.3;
 }
 .org-name {
@@ -191,7 +213,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #64748b;
+  color: #64748b !important;
   margin-bottom: 15px;
   font-size: 0.9rem;
 }
@@ -199,11 +221,11 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #f1f5f9;
+  background: #f1f5f9 !important;
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 0.85rem;
-  color: #475569;
+  color: #475569 !important;
   font-weight: 600;
   margin-bottom: 15px;
 }
@@ -211,9 +233,9 @@ body {
   position: absolute;
   top: -12px;
   left: 20px;
-  background: white;
-  border: 1px solid #eab308;
-  color: #ca8a04;
+  background: white !important;
+  border: 1px solid #eab308 !important;
+  color: #ca8a04 !important;
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -224,7 +246,7 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* --- INTEREST CHIPS --- */
+/* --- INTEREST CHIPS (LOCKED COLORS) --- */
 .chips-container {
   display: flex;
   flex-wrap: wrap;
@@ -232,37 +254,46 @@ body {
   margin-bottom: 15px;
 }
 .interest-chip {
-  background: #e2e8f0;
-  color: #1e293b;
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
   border: none;
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: background 0.2s;
 }
 .interest-chip.active {
-  background: #2563eb;
-  color: white;
+  background-color: #2563eb !important;
+  color: white !important;
 }
-
-/* --- BUTTONS --- */
-.login-btn,
-.submit-btn {
-  background-color: #2563eb;
-  color: white;
+.save-interests-btn {
+  background-color: #2563eb !important;
+  color: white !important;
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
-  transition: opacity 0.2s;
+  margin-top: 5px;
+}
+
+/* --- BUTTONS (LOCKED COLORS) --- */
+.login-btn,
+.submit-btn {
+  background-color: #2563eb !important;
+  color: white !important;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
   width: 100%;
 }
 .create-task-btn {
-  background-color: #059669;
-  color: white;
+  background-color: #059669 !important;
+  color: white !important;
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
@@ -273,8 +304,8 @@ body {
   gap: 6px;
 }
 .logout-btn {
-  background-color: #ef4444;
-  color: white;
+  background-color: #ef4444 !important;
+  color: white !important;
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
@@ -290,7 +321,6 @@ body {
   border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
   margin-top: 15px;
 }
 .applied-btn {
@@ -304,8 +334,6 @@ body {
   font-weight: 700;
   margin-top: 15px;
 }
-
-/* 👇 FIXED: Styling for the negative Withdraw action */
 .withdraw-btn {
   background-color: transparent !important;
   color: #ef4444 !important;
@@ -316,27 +344,6 @@ body {
   cursor: pointer;
   font-weight: 700;
   margin-top: 15px;
-  transition: background 0.2s;
-}
-.withdraw-btn:hover {
-  background-color: #fef2f2 !important;
-}
-
-/* 👇 FIXED: Making the modal Cancel button distinct */
-.close-btn {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background-color: white !important;
-  color: #475569 !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.close-btn:hover {
-  background-color: #f1f5f9 !important;
 }
 
 .heart-btn,
@@ -351,7 +358,6 @@ body {
   transition:
     transform 0.2s,
     color 0.2s;
-  box-shadow: none !important;
 }
 .heart-btn {
   right: 15px;
@@ -365,7 +371,7 @@ body {
   color: #0f172a;
 }
 
-/* --- STATUS BANNERS & DASHBOARDS --- */
+/* --- STATUS BANNERS --- */
 .status-banner {
   padding: 4px 12px;
   border-radius: 20px;
@@ -386,56 +392,6 @@ body {
 .status-banner.declined {
   background: #fee2e2 !important;
   color: #991b1b !important;
-}
-
-.manage-card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-.applicant-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px dashed #e2e8f0;
-}
-.action-btns {
-  display: flex;
-  gap: 10px;
-}
-.action-btns button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-.action-btns button:hover {
-  background: #f1f5f9;
-}
-.text-green-600 {
-  color: #16a34a;
-}
-.text-red-600 {
-  color: #dc2626;
-}
-.delete-task-btn {
-  width: 100%;
-  margin-top: 15px;
-  background-color: #fee2e2;
-  color: #b91c1c;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
 }
 
 /* --- MODALS --- */
@@ -462,35 +418,19 @@ body {
   max-height: 90vh;
   overflow-y: auto;
 }
-
-/* 👇 FIXED: Ensure inputs stack nicely and take full width */
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin: 20px 0;
-}
-.auth-form input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  color: #0f172a !important;
-  background-color: #f8fafc !important;
-  font-size: 1rem;
-}
-
+.auth-form,
 .task-form {
   display: flex;
   flex-direction: column;
   gap: 15px;
   margin: 20px 0;
 }
+.auth-form input,
 .task-form input,
 .task-form select {
   width: 100%;
   padding: 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 8px;
   color: #0f172a !important;
   background-color: #f8fafc !important;
@@ -505,57 +445,115 @@ body {
 .geo-inputs select {
   flex: 1;
   min-width: 0;
-} /* Prevents them from pushing out of the box */
+}
 .toggle-text {
-  color: #2563eb;
+  color: #2563eb !important;
   cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   margin: 5px 0;
 }
+.close-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background-color: transparent !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-/* 👇 FIXED: RESPONSIVE MEDIA QUERIES FOR MOBILE */
+/* --- ORG DASHBOARD --- */
+.applicant-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.action-btns {
+  display: flex;
+  gap: 10px;
+}
+.action-btns button {
+  background: none !important;
+  border: none !important;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: transform 0.2s;
+}
+.action-btns button:hover {
+  transform: scale(1.1);
+}
+.text-green-600 {
+  color: #16a34a !important;
+}
+.text-red-600 {
+  color: #dc2626 !important;
+}
+.delete-task-btn {
+  width: 100%;
+  margin-top: 15px;
+  background-color: #fef2f2 !important;
+  color: #ef4444 !important;
+  border: 2px solid #ef4444 !important;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 👇 NEW: PERFECT MOBILE RESPONSIVENESS */
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
-    gap: 20px;
+    align-items: center;
     text-align: center;
+    gap: 15px;
   }
   .user-profile-header {
     flex-direction: column;
-    justify-content: center;
-    text-align: center;
-  }
-  .header-right {
-    flex-direction: row;
-    flex-wrap: wrap;
-    width: 100%;
-    justify-content: center;
     gap: 10px;
   }
-  .header-right button {
-    flex: 1;
+  .header-right {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+  .create-task-btn,
+  .logout-btn,
+  .login-btn {
+    width: 100%;
     justify-content: center;
   }
 
+  /* Turns the tabs into a clean 2-column grid instead of messy wrapping */
   .view-toggle {
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
   .view-toggle button {
-    flex: 1;
-    justify-content: center;
-    min-width: 120px;
+    width: 100%;
   }
+  .save-filter-btn {
+    grid-column: span 2;
+  } /* Makes the last button stretch full width */
 
   .search-filter-container {
     flex-direction: column;
     align-items: stretch;
   }
   .time-filter-wrapper {
+    width: 100%;
     justify-content: space-between;
     margin-top: 10px;
-  }
-  .clean-search-input {
-    width: 100%;
   }
 }
