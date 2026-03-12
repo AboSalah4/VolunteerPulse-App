@@ -50,6 +50,8 @@ const UserSchema = new mongoose.Schema({
   interests: { type: [String], default: [] },
   appliedTasks: [{ type: String }],
   savedTasks: [{ type: String }],
+  // 👇 NEW: Track the user's total volunteer time (Pulse Points)
+  totalVolunteerMinutes: { type: Number, default: 0 },
 });
 const User = mongoose.model("User", UserSchema);
 
@@ -109,9 +111,21 @@ app.post("/api/update-status", async (req, res) => {
     const { taskId, userId, status } = req.body;
     const task = await Task.findById(taskId);
     const applicant = task.applicants.find((a) => a.userId === userId);
+
     if (applicant) {
       applicant.status = status;
       await task.save();
+
+      // 👇 NEW: If accepted, award the Pulse Points to the student!
+      if (status === "Accepted") {
+        const student = await User.findById(userId);
+        if (student) {
+          student.totalVolunteerMinutes =
+            (student.totalVolunteerMinutes || 0) + task.duration;
+          await student.save();
+        }
+      }
+
       await sendEmail({
         email: applicant.userEmail,
         subject: `Update: ${task.title}`,
@@ -186,13 +200,13 @@ app.post("/api/save-task", async (req, res) => {
 });
 
 // --- USER & AUTH ROUTES ---
-
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user || !(await bcrypt.compare(password, user.password)))
       return res.status(400).json({ message: "Invalid credentials" });
+
     res.json({
       user: {
         id: user._id,
@@ -202,6 +216,8 @@ app.post("/api/login", async (req, res) => {
         interests: user.interests,
         appliedTasks: user.appliedTasks,
         savedTasks: user.savedTasks,
+        // 👇 NEW: Send the points to the frontend upon login
+        totalVolunteerMinutes: user.totalVolunteerMinutes || 0,
       },
     });
   } catch (err) {
