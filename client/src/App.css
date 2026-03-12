@@ -623,3 +623,25 @@ body {
   font-weight: bold;
   border: 1px solid #166534;
 }
+
+/* --- DELETE BUTTON FIX --- */
+.delete-btn {
+  position: absolute !important;
+  top: 15px !important;
+  left: 15px !important;
+  background-color: transparent !important;
+  border: none !important;
+  width: auto !important;
+  padding: 0 !important;
+  font-size: 1.2rem !important;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: none !important;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+
+.delete-btn:hover {
+  transform: scale(1.2);
+  opacity: 1;
+}

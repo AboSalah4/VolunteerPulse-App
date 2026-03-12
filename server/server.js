@@ -47,7 +47,6 @@ const User = mongoose.model("User", UserSchema);
 
 // --- SEED DATA ---
 const seedTasks = async () => {
-  // 👇 FIXED: Only seed if the database is empty so we don't delete user-created tasks!
   const count = await Task.countDocuments();
   if (count > 0) {
     console.log("🌲 Tasks already exist. Skipping seed.");
@@ -161,7 +160,7 @@ mongoose.connection.once("open", seedTasks);
 
 // --- ROUTES ---
 
-// 👇 NEW: Create a new Task from the frontend form (VP-F01)
+// Create Task
 app.post("/api/tasks", async (req, res) => {
   try {
     const newTask = new Task(req.body);
@@ -172,7 +171,17 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-// 👇 Retained existing GET route
+// 👇 NEW: Delete Task Route
+app.delete("/api/tasks/:id", async (req, res) => {
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Task deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete task" });
+  }
+});
+
+// Get Tasks
 app.get("/api/tasks", async (req, res) => {
   const { maxTime } = req.query;
   const tasks = await Task.find({
@@ -181,7 +190,7 @@ app.get("/api/tasks", async (req, res) => {
   res.json(tasks);
 });
 
-// 👇 Retained all Auth, Application, and Cloudinary routes
+// Auth & Interactions
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -311,11 +320,9 @@ app.post(
   },
 );
 
-// 👇 THE HEALTH CHECK ROUTE
 app.get("/", (req, res) => {
   res.status(200).send("VolunteerPulse Server is Healthy and Awake!");
 });
 
-// 👇 ONLY ONE PORT AND LISTEN AT THE VERY END
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`✅ Server on ${PORT}`));

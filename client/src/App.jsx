@@ -31,9 +31,8 @@ function VolunteerApp() {
   const [resetToken, setResetToken] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isSubmittingTask, setIsSubmittingTask] = useState(false); // Loading state
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false);
 
-  // 👇 UPDATED: Changed duration to handle value and unit separately
   const [newTask, setNewTask] = useState({
     title: "",
     organization: "",
@@ -88,24 +87,21 @@ function VolunteerApp() {
     fetchTasks();
   }, [filter]);
 
-  // 👇 UPDATED: Handles auto-geocoding and duration math!
   const handleCreateTask = async (e) => {
     e.preventDefault();
     setError("");
     setIsSubmittingTask(true);
 
-    // 1. Calculate the total duration in minutes for the backend
     let totalMinutes = parseInt(newTask.durationValue);
     if (newTask.durationUnit === "Hours") totalMinutes *= 60;
     if (newTask.durationUnit === "Days") totalMinutes *= 1440;
 
     try {
-      // 2. Auto-Geocode: Turn the address into coordinates automatically!
       const geoRes = await axios.get(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(newTask.address)}`,
       );
 
-      let finalLat = 42.9849; // Fallback to London, ON center if address isn't found
+      let finalLat = 42.9849;
       let finalLng = -81.2453;
 
       if (geoRes.data && geoRes.data.length > 0) {
@@ -117,7 +113,6 @@ function VolunteerApp() {
         );
       }
 
-      // 3. Send the clean data to the backend
       const taskPayload = {
         title: newTask.title,
         organization: newTask.organization,
@@ -132,7 +127,6 @@ function VolunteerApp() {
       setSuccessMsg("Task created successfully!");
       setShowCreateModal(false);
 
-      // Reset form
       setNewTask({
         title: "",
         organization: "",
@@ -147,6 +141,21 @@ function VolunteerApp() {
       setError("Failed to create task.");
     } finally {
       setIsSubmittingTask(false);
+    }
+  };
+
+  // 👇 NEW: Handle Task Deletion
+  const handleDeleteTask = async (taskId) => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
+      try {
+        await axios.delete(`${API_URL}/api/tasks/${taskId}`);
+        setSuccessMsg("Task deleted!");
+        fetchTasks(); // Refresh the list
+        setTimeout(() => setSuccessMsg(""), 2000);
+      } catch (err) {
+        console.error("Failed to delete task", err);
+        setError("Failed to delete task.");
+      }
     }
   };
 
@@ -379,7 +388,6 @@ function VolunteerApp() {
                 }
               />
 
-              {/* 👇 UPDATED: Duration Row with positive numbers only and unit selection */}
               <div className="geo-inputs">
                 <input
                   type="number"
@@ -425,8 +433,6 @@ function VolunteerApp() {
                   setNewTask({ ...newTask, address: e.target.value })
                 }
               />
-
-              {/* Note: Lat & Lng are now hidden and processed automatically! */}
 
               <button
                 type="submit"
@@ -626,6 +632,17 @@ function VolunteerApp() {
           <div className="task-list">
             {sortedTasks.map((task) => (
               <div key={task._id} className="task-card">
+                {/* 👇 NEW: Delete Task Button */}
+                {user && (
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDeleteTask(task._id)}
+                    title="Delete Task"
+                  >
+                    🗑️
+                  </button>
+                )}
+
                 <button
                   className={`heart-btn ${user?.savedTasks?.includes(task._id) ? "saved" : ""}`}
                   onClick={() => handleSaveTask(task._id)}
@@ -678,6 +695,7 @@ function VolunteerApp() {
                       {task.address}
                     </span>
                     <br />
+
                     <button
                       onClick={() => handleSaveTask(task._id)}
                       style={{
@@ -689,6 +707,23 @@ function VolunteerApp() {
                     >
                       {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
                     </button>
+                    {/* Map Popup Delete Button */}
+                    {user && (
+                      <button
+                        onClick={() => handleDeleteTask(task._id)}
+                        style={{
+                          border: "none",
+                          background: "none",
+                          cursor: "pointer",
+                          fontSize: "18px",
+                          marginLeft: "10px",
+                        }}
+                        title="Delete Task"
+                      >
+                        🗑️
+                      </button>
+                    )}
+
                     <button
                       className={
                         user?.appliedTasks?.includes(task._id)
