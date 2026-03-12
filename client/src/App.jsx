@@ -18,6 +18,101 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+// 👇 NEW: Professional SVG Icon Library (No more emojis!)
+const Icons = {
+  Camera: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+      <circle cx="12" cy="13" r="4"></circle>
+    </svg>
+  ),
+  List: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <line x1="8" y1="6" x2="21" y2="6"></line>
+      <line x1="8" y1="12" x2="21" y2="12"></line>
+      <line x1="8" y1="18" x2="21" y2="18"></line>
+      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+      <line x1="3" y1="12" x2="3.01" y2="12"></line>
+      <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    </svg>
+  ),
+  Map: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+      <line x1="9" y1="3" x2="9" y2="18"></line>
+      <line x1="15" y1="6" x2="15" y2="21"></line>
+    </svg>
+  ),
+  Check: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  ),
+  FileCheck: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <polyline points="9 15 11 17 15 13"></polyline>
+    </svg>
+  ),
+  Settings: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  ),
+  Heart: ({ filled }) => (
+    <svg
+      className="svg-icon"
+      viewBox="0 0 24 24"
+      fill={filled ? "#ef4444" : "none"}
+      stroke={filled ? "#ef4444" : "currentColor"}
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+    </svg>
+  ),
+  MapPin: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+      <circle cx="12" cy="10" r="3"></circle>
+    </svg>
+  ),
+  Clock: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+  ),
+  Trash: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    </svg>
+  ),
+  Plus: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+  ),
+  Star: () => (
+    <svg
+      className="svg-icon"
+      viewBox="0 0 24 24"
+      fill="#eab308"
+      stroke="#eab308"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+    </svg>
+  ),
+  X: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  ),
+};
+
 function VolunteerApp() {
   const { user, login, logout } = useContext(AuthContext);
 
@@ -102,7 +197,6 @@ function VolunteerApp() {
     e.preventDefault();
     setError("");
     setIsSubmittingTask(true);
-
     let totalMinutes = parseInt(newTask.durationValue);
     if (newTask.durationUnit === "Hours") totalMinutes *= 60;
     if (newTask.durationUnit === "Days") totalMinutes *= 1440;
@@ -111,13 +205,12 @@ function VolunteerApp() {
       const geoRes = await axios.get(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(newTask.address)}`,
       );
-      let finalLat = 42.9849;
-      let finalLng = -81.2453;
+      let finalLat = 42.9849,
+        finalLng = -81.2453;
       if (geoRes.data && geoRes.data.length > 0) {
         finalLat = parseFloat(geoRes.data[0].lat);
         finalLng = parseFloat(geoRes.data[0].lon);
       }
-
       const taskPayload = {
         ...newTask,
         duration: totalMinutes,
@@ -346,7 +439,7 @@ function VolunteerApp() {
                   alt="Profile"
                 />
                 <label className="upload-label">
-                  {uploading ? "..." : "📷"}
+                  {uploading ? "..." : <Icons.Camera />}
                   <input
                     type="file"
                     onChange={handleImageUpload}
@@ -355,7 +448,7 @@ function VolunteerApp() {
                   />
                 </label>
               </div>
-              <span>
+              <span className="welcome-text">
                 Welcome, <strong>{user.name}</strong>!
               </span>
             </div>
@@ -367,7 +460,7 @@ function VolunteerApp() {
               onClick={() => setShowCreateModal(true)}
               className="create-task-btn"
             >
-              ＋ Post Task
+              <Icons.Plus /> Post Task
             </button>
           )}
           {user ? (
@@ -382,6 +475,7 @@ function VolunteerApp() {
         </div>
       </header>
 
+      {/* MODALS */}
       {showCreateModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -555,20 +649,20 @@ function VolunteerApp() {
             className={viewMode === "list" ? "active" : ""}
             onClick={() => setViewMode("list")}
           >
-            📋 List
+            <Icons.List /> List
           </button>
           <button
             className={viewMode === "map" ? "active" : ""}
             onClick={() => setViewMode("map")}
           >
-            🗺️ Map
+            <Icons.Map /> Map
           </button>
           {user && (
             <button
               className={viewMode === "applied" ? "active" : ""}
               onClick={() => setViewMode("applied")}
             >
-              ✍️ My Apps
+              <Icons.FileCheck /> My Apps
             </button>
           )}
           {user && (
@@ -576,7 +670,7 @@ function VolunteerApp() {
               className={viewMode === "manage" ? "active" : ""}
               onClick={() => setViewMode("manage")}
             >
-              ⚙️ Manage
+              <Icons.Settings /> Manage
             </button>
           )}
           {user && (
@@ -584,7 +678,8 @@ function VolunteerApp() {
               className={`save-filter-btn ${showSavedOnly ? "active" : ""}`}
               onClick={() => setShowSavedOnly(!showSavedOnly)}
             >
-              ❤️ {showSavedOnly ? "Showing Saved" : "Show Saved"}
+              <Icons.Heart filled={showSavedOnly} />{" "}
+              {showSavedOnly ? "Showing Saved" : "Show Saved"}
             </button>
           )}
         </div>
@@ -642,8 +737,9 @@ function VolunteerApp() {
                                 "Accepted",
                               )
                             }
+                            className="text-green-600 hover:scale-110"
                           >
-                            ✅
+                            <Icons.Check />
                           </button>
                           <button
                             onClick={() =>
@@ -653,8 +749,9 @@ function VolunteerApp() {
                                 "Declined",
                               )
                             }
+                            className="text-red-600 hover:scale-110"
                           >
-                            ❌
+                            <Icons.X />
                           </button>
                         </div>
                       </div>
@@ -664,7 +761,7 @@ function VolunteerApp() {
                     className="delete-task-btn"
                     onClick={() => handleDeleteTask(task._id)}
                   >
-                    Delete Task
+                    <Icons.Trash /> Delete Task
                   </button>
                 </div>
               ))}
@@ -698,23 +795,41 @@ function VolunteerApp() {
               <div className="task-list">
                 {sortedTasks.map((task) => (
                   <div key={task._id} className="task-card">
+                    {user && (
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteTask(task._id)}
+                        title="Delete Task"
+                      >
+                        <Icons.Trash />
+                      </button>
+                    )}
                     <button
-                      className={`heart-btn ${user?.savedTasks?.includes(task._id) ? "saved" : ""}`}
+                      className="heart-btn"
                       onClick={() => handleSaveTask(task._id)}
                     >
-                      {user?.savedTasks?.includes(task._id) ? "❤️" : "🤍"}
+                      <Icons.Heart
+                        filled={user?.savedTasks?.includes(task._id)}
+                      />
                     </button>
                     {user?.interests?.includes(task.category) && (
-                      <div className="recommended-badge">⭐ Recommended</div>
+                      <div className="recommended-badge">
+                        <Icons.Star /> Recommended
+                      </div>
                     )}
+
                     <h3>{task.title}</h3>
                     <p className="org-name">{task.organization}</p>
-                    <p className="task-address">📍 {task.address}</p>
+                    <p className="task-address">
+                      <Icons.MapPin /> {task.address}
+                    </p>
+                    <span className="category-tag">{task.category}</span>
                     <div className="badge-container">
                       <span className="duration-badge macro">
-                        ⏱ {formatDuration(task.duration)}
+                        <Icons.Clock /> {formatDuration(task.duration)}
                       </span>
                     </div>
+
                     <button
                       className={
                         user?.appliedTasks?.includes(task._id)
@@ -735,7 +850,7 @@ function VolunteerApp() {
                 <MapContainer
                   center={[42.9849, -81.2453]}
                   zoom={13}
-                  style={{ height: "500px", width: "100%" }}
+                  style={{ height: "500px", width: "100%", zIndex: 1 }}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   {sortedTasks.map((task) => (
