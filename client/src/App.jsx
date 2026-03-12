@@ -34,7 +34,7 @@ function VolunteerApp() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSubmittingTask, setIsSubmittingTask] = useState(false);
-  const [viewMode, setViewMode] = useState("list"); // list, map, manage, or applied
+  const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   const [newTask, setNewTask] = useState({
@@ -155,7 +155,7 @@ function VolunteerApp() {
       });
       setSuccessMsg(`Applicant ${status}!`);
       fetchMyTasks();
-      fetchTasks(); // Refresh global list for student view updates
+      fetchTasks();
       setTimeout(() => setSuccessMsg(""), 2000);
     } catch (err) {
       console.error("Status update failed");
@@ -382,7 +382,6 @@ function VolunteerApp() {
         </div>
       </header>
 
-      {/* MODALS */}
       {showCreateModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -528,7 +527,6 @@ function VolunteerApp() {
         </div>
       )}
 
-      {/* MAIN CONTENT */}
       <div className="main-content">
         {successMsg && <div className="floating-success">{successMsg}</div>}
 
