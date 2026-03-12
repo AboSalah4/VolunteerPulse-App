@@ -19,18 +19,26 @@ mongoose
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // --- MODELS ---
-const Task = mongoose.model(
-  "Task",
-  new mongoose.Schema({
-    title: String,
-    organization: String,
-    duration: Number,
-    category: String,
-    lat: Number,
-    lng: Number,
-    address: String,
-  }),
-);
+
+const TaskSchema = new mongoose.Schema({
+  title: String,
+  organization: String,
+  duration: Number,
+  category: String,
+  lat: Number,
+  lng: Number,
+  address: String,
+  createdBy: String, // Tracks organization email
+  applicants: [
+    {
+      userId: String,
+      userName: String,
+      userEmail: String,
+      status: { type: String, default: "Pending" }, // Pending, Accepted, Declined
+    },
+  ],
+});
+const Task = mongoose.model("Task", TaskSchema);
 
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
@@ -48,11 +56,7 @@ const User = mongoose.model("User", UserSchema);
 // --- SEED DATA ---
 const seedTasks = async () => {
   const count = await Task.countDocuments();
-  if (count > 0) {
-    console.log("🌲 Tasks already exist. Skipping seed.");
-    return;
-  }
-
+  if (count > 0) return;
   await Task.insertMany([
     {
       title: "Sort Books",
@@ -62,33 +66,7 @@ const seedTasks = async () => {
       lat: 42.985,
       lng: -81.246,
       address: "251 Dundas St, London, ON",
-    },
-    {
-      title: "Online Reading Tutor",
-      organization: "Global Literacy",
-      duration: 60,
-      category: "Education",
-      lat: 42.982,
-      lng: -81.251,
-      address: "167 Central Ave, London, ON",
-    },
-    {
-      title: "Social Media Post",
-      organization: "EcoGroup",
-      duration: 15,
-      category: "Environment",
-      lat: 42.98,
-      lng: -81.25,
-      address: "1017 Western Rd, London, ON",
-    },
-    {
-      title: "Tree Planting Day",
-      organization: "GreenCity",
-      duration: 240,
-      category: "Environment",
-      lat: 42.975,
-      lng: -81.235,
-      address: "1001 Fanshawe College Blvd, London, ON",
+      createdBy: "admin@volunteerpulse.com",
     },
     {
       title: "Walk Dogs",
@@ -98,69 +76,15 @@ const seedTasks = async () => {
       lat: 42.99,
       lng: -81.24,
       address: "624 Clarke Rd, London, ON",
-    },
-    {
-      title: "Cat Socialization",
-      organization: "Kitty Haven",
-      duration: 120,
-      category: "Animals",
-      lat: 42.992,
-      lng: -81.245,
-      address: "121 Pine Valley Blvd, London, ON",
-    },
-    {
-      title: "Event Setup",
-      organization: "Community Center",
-      duration: 180,
-      category: "Community",
-      lat: 42.986,
-      lng: -81.238,
-      address: "1119 Jalna Blvd, London, ON",
-    },
-    {
-      title: "Food Bank Sorter",
-      organization: "Metro Food Bank",
-      duration: 120,
-      category: "Community",
-      lat: 42.981,
-      lng: -81.23,
-      address: "926 Leathorne St, London, ON",
-    },
-    {
-      title: "Hackathon Mentor",
-      organization: "Tech Non-Profit",
-      duration: 1440,
-      category: "Tech",
-      lat: 42.988,
-      lng: -81.255,
-      address: "150 Dufferin Ave, London, ON",
-    },
-    {
-      title: "Website Bug Fix",
-      organization: "Open Source Project",
-      duration: 300,
-      category: "Tech",
-      lat: 42.984,
-      lng: -81.26,
-      address: "137 Dundas St, London, ON",
-    },
-    {
-      title: "Database Cleanup",
-      organization: "Charity Tech",
-      duration: 43200,
-      category: "Tech",
-      lat: 42.987,
-      lng: -81.248,
-      address: "450 Ridout St N, London, ON",
+      createdBy: "admin@volunteerpulse.com",
     },
   ]);
   console.log("🌱 Database seeded!");
 };
 mongoose.connection.once("open", seedTasks);
 
-// --- ROUTES ---
+// --- TASK & APPLICATION ROUTES ---
 
-// Create Task
 app.post("/api/tasks", async (req, res) => {
   try {
     const newTask = new Task(req.body);
@@ -171,17 +95,44 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-// 👇 NEW: Delete Task Route
-app.delete("/api/tasks/:id", async (req, res) => {
+app.get("/api/my-tasks/:email", async (req, res) => {
   try {
-    await Task.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Task deleted successfully" });
+    const myTasks = await Task.find({ createdBy: req.params.email });
+    res.json(myTasks);
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete task" });
+    res.status(500).json({ error: "Failed to fetch tasks" });
   }
 });
 
-// Get Tasks
+app.post("/api/update-status", async (req, res) => {
+  try {
+    const { taskId, userId, status } = req.body;
+    const task = await Task.findById(taskId);
+    const applicant = task.applicants.find((a) => a.userId === userId);
+    if (applicant) {
+      applicant.status = status;
+      await task.save();
+      await sendEmail({
+        email: applicant.userEmail,
+        subject: `Update: ${task.title}`,
+        message: `Your application for "${task.title}" is now ${status.toLowerCase()}.`,
+      });
+    }
+    res.status(200).json({ message: "Status updated" });
+  } catch (err) {
+    res.status(500).json({ error: "Update failed" });
+  }
+});
+
+app.delete("/api/tasks/:id", async (req, res) => {
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json({ error: "Delete failed" });
+  }
+});
+
 app.get("/api/tasks", async (req, res) => {
   const { maxTime } = req.query;
   const tasks = await Task.find({
@@ -190,14 +141,58 @@ app.get("/api/tasks", async (req, res) => {
   res.json(tasks);
 });
 
-// Auth & Interactions
+app.post("/api/apply-task", async (req, res) => {
+  try {
+    const { email, taskId } = req.body;
+    const user = await User.findOne({ email });
+    const task = await Task.findById(taskId);
+    if (!user || !task) return res.status(404).json({ message: "Not found" });
+
+    if (user.appliedTasks.includes(taskId)) {
+      user.appliedTasks = user.appliedTasks.filter((id) => id !== taskId);
+      task.applicants = task.applicants.filter(
+        (a) => a.userId !== user._id.toString(),
+      );
+    } else {
+      user.appliedTasks.push(taskId);
+      task.applicants.push({
+        userId: user._id.toString(),
+        userName: user.name,
+        userEmail: user.email,
+        status: "Pending",
+      });
+    }
+    await user.save();
+    await task.save();
+    res.status(200).json({ appliedTasks: user.appliedTasks });
+  } catch (error) {
+    res.status(500).json({ message: "Apply failed" });
+  }
+});
+
+app.post("/api/save-task", async (req, res) => {
+  try {
+    const { email, taskId } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    user.savedTasks.includes(taskId)
+      ? (user.savedTasks = user.savedTasks.filter((id) => id !== taskId))
+      : user.savedTasks.push(taskId);
+    await user.save();
+    res.status(200).json({ savedTasks: user.savedTasks });
+  } catch (error) {
+    res.status(500).json({ message: "Save failed" });
+  }
+});
+
+// --- USER & AUTH ROUTES ---
+
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user || !(await bcrypt.compare(password, user.password)))
       return res.status(400).json({ message: "Invalid credentials" });
-
     res.json({
       user: {
         id: user._id,
@@ -214,50 +209,16 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.post("/api/save-task", async (req, res) => {
-  try {
-    const { email, taskId } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.savedTasks.includes(taskId)) {
-      user.savedTasks = user.savedTasks.filter((id) => id !== taskId);
-    } else {
-      user.savedTasks.push(taskId);
-    }
-
-    await user.save();
-    res.status(200).json({ savedTasks: user.savedTasks });
-  } catch (error) {
-    res.status(500).json({ message: "Save failed" });
-  }
-});
-
-app.post("/api/apply-task", async (req, res) => {
-  try {
-    const { email, taskId } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.appliedTasks.includes(taskId)) {
-      user.appliedTasks = user.appliedTasks.filter((id) => id !== taskId);
-    } else {
-      user.appliedTasks.push(taskId);
-    }
-
-    await user.save();
-    res.status(200).json({ appliedTasks: user.appliedTasks });
-  } catch (error) {
-    res.status(500).json({ message: "Application failed" });
-  }
-});
-
 app.post("/api/register", async (req, res) => {
-  const { name, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = new User({ name, email, password: hashedPassword });
-  await newUser.save();
-  res.status(201).json({ message: "User created!" });
+  try {
+    const { name, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, email, password: hashedPassword });
+    await newUser.save();
+    res.status(201).json({ message: "User created!" });
+  } catch (err) {
+    res.status(500).json({ error: "Registration failed" });
+  }
 });
 
 app.post("/api/update-interests", async (req, res) => {
@@ -320,9 +281,9 @@ app.post(
   },
 );
 
-app.get("/", (req, res) => {
-  res.status(200).send("VolunteerPulse Server is Healthy and Awake!");
-});
+app.get("/", (req, res) =>
+  res.status(200).send("VolunteerPulse Server is Healthy and Awake!"),
+);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`✅ Server on ${PORT}`));
