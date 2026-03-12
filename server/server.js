@@ -311,5 +311,13 @@ app.post(
   },
 );
 
+// 👇 ADD THIS HEALTH CHECK ROUTE BACK IN
+app.get("/", (req, res) => {
+  res.status(200).send("VolunteerPulse Server is Healthy and Awake!");
+});
+
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`✅ Server on ${PORT}`));
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`✅ Server on ${PORT}`));
