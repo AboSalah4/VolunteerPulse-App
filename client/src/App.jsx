@@ -22,7 +22,7 @@ function VolunteerApp() {
   const { user, login, logout } = useContext(AuthContext);
 
   const [tasks, setTasks] = useState([]);
-  const [myCreatedTasks, setMyCreatedTasks] = useState([]); // 👇 For Org Dashboard
+  const [myCreatedTasks, setMyCreatedTasks] = useState([]);
   const [filter, setFilter] = useState(999999);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -34,7 +34,7 @@ function VolunteerApp() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSubmittingTask, setIsSubmittingTask] = useState(false);
-  const [viewMode, setViewMode] = useState("list"); // list, map, or manage
+  const [viewMode, setViewMode] = useState("list"); // list, map, manage, or applied
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   const [newTask, setNewTask] = useState({
@@ -85,7 +85,6 @@ function VolunteerApp() {
       .catch((err) => console.error(err));
   };
 
-  // 👇 NEW: Fetch tasks created by the current user
   const fetchMyTasks = () => {
     if (!user) return;
     axios
@@ -114,7 +113,6 @@ function VolunteerApp() {
       );
       let finalLat = 42.9849;
       let finalLng = -81.2453;
-
       if (geoRes.data && geoRes.data.length > 0) {
         finalLat = parseFloat(geoRes.data[0].lat);
         finalLng = parseFloat(geoRes.data[0].lon);
@@ -125,9 +123,8 @@ function VolunteerApp() {
         duration: totalMinutes,
         lat: finalLat,
         lng: finalLng,
-        createdBy: user.email, // 👇 Linking the task to the creator
+        createdBy: user.email,
       };
-
       await axios.post(`${API_URL}/api/tasks`, taskPayload);
       setSuccessMsg("Task posted!");
       setShowCreateModal(false);
@@ -149,7 +146,6 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 NEW: Handle Accept/Decline
   const handleUpdateStatus = async (taskId, userId, status) => {
     try {
       await axios.post(`${API_URL}/api/update-status`, {
@@ -159,6 +155,7 @@ function VolunteerApp() {
       });
       setSuccessMsg(`Applicant ${status}!`);
       fetchMyTasks();
+      fetchTasks(); // Refresh global list for student view updates
       setTimeout(() => setSuccessMsg(""), 2000);
     } catch (err) {
       console.error("Status update failed");
@@ -209,7 +206,7 @@ function VolunteerApp() {
       const res = await axios.post(`${API_URL}/api/forgot-password`, { email });
       setSuccessMsg(res.data.message);
     } catch (err) {
-      setError(err.response?.data?.message || "Error");
+      setError("Error sending link");
     }
   };
 
@@ -301,7 +298,7 @@ function VolunteerApp() {
         taskId,
       });
       login({ ...user, appliedTasks: res.data.appliedTasks });
-      fetchTasks(); // Refresh to update applicant list if needed
+      fetchTasks();
     } catch (err) {
       console.error("Apply failed", err);
     }
@@ -309,8 +306,8 @@ function VolunteerApp() {
 
   const formatDuration = (mins) => {
     if (mins < 60) return `${mins} Mins`;
-    if (mins < 1440) return `${mins / 60} Hours`;
-    return `${mins / 1440} Days`;
+    if (mins < 1440) return `${Math.floor(mins / 60)} Hours`;
+    return `${Math.floor(mins / 1440)} Days`;
   };
 
   const filteredTasks = tasks.filter((t) => {
@@ -385,6 +382,7 @@ function VolunteerApp() {
         </div>
       </header>
 
+      {/* MODALS */}
       {showCreateModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -444,7 +442,7 @@ function VolunteerApp() {
               </select>
               <input
                 type="text"
-                placeholder="Street Address"
+                placeholder="Full Street Address"
                 required
                 value={newTask.address}
                 onChange={(e) =>
@@ -476,7 +474,7 @@ function VolunteerApp() {
               {isResetMode
                 ? "New Password"
                 : isForgotPassword
-                  ? "Reset Password"
+                  ? "Reset"
                   : isRegistering
                     ? "Register"
                     : "Login"}
@@ -530,6 +528,7 @@ function VolunteerApp() {
         </div>
       )}
 
+      {/* MAIN CONTENT */}
       <div className="main-content">
         {successMsg && <div className="floating-success">{successMsg}</div>}
 
@@ -568,10 +567,18 @@ function VolunteerApp() {
           </button>
           {user && (
             <button
+              className={viewMode === "applied" ? "active" : ""}
+              onClick={() => setViewMode("applied")}
+            >
+              ✍️ My Apps
+            </button>
+          )}
+          {user && (
+            <button
               className={viewMode === "manage" ? "active" : ""}
               onClick={() => setViewMode("manage")}
             >
-              ⚙️ Manage My Tasks
+              ⚙️ Manage
             </button>
           )}
           {user && (
@@ -584,19 +591,44 @@ function VolunteerApp() {
           )}
         </div>
 
-        {viewMode === "manage" ? (
+        {viewMode === "applied" ? (
+          <div className="applied-section">
+            <h2>My Volunteering Applications</h2>
+            {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length ===
+              0 && <p>No applications yet.</p>}
+            <div className="task-list">
+              {tasks
+                .filter((t) => user?.appliedTasks?.includes(t._id))
+                .map((task) => {
+                  const application = task.applicants?.find(
+                    (a) => a.userEmail === user.email,
+                  );
+                  const status = application?.status || "Pending";
+                  return (
+                    <div key={task._id} className="task-card">
+                      <div className={`status-banner ${status.toLowerCase()}`}>
+                        {status}
+                      </div>
+                      <h3>{task.title}</h3>
+                      <p className="org-name">{task.organization}</p>
+                      <button
+                        className="applied-btn"
+                        onClick={() => handleApply(task._id)}
+                      >
+                        Withdraw
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        ) : viewMode === "manage" ? (
           <div className="manage-section">
             <h2>Management Dashboard</h2>
-            {myCreatedTasks.length === 0 && (
-              <p>You haven't posted any tasks yet.</p>
-            )}
             <div className="task-grid">
               {myCreatedTasks.map((task) => (
                 <div key={task._id} className="manage-card">
                   <h3>{task.title}</h3>
-                  <p>
-                    <strong>Applicants:</strong> {task.applicants.length}
-                  </p>
                   <div className="applicant-list">
                     {task.applicants.map((app) => (
                       <div key={app.userId} className="applicant-row">
@@ -605,7 +637,6 @@ function VolunteerApp() {
                         </span>
                         <div className="action-btns">
                           <button
-                            className="accept-btn"
                             onClick={() =>
                               handleUpdateStatus(
                                 task._id,
@@ -617,7 +648,6 @@ function VolunteerApp() {
                             ✅
                           </button>
                           <button
-                            className="decline-btn"
                             onClick={() =>
                               handleUpdateStatus(
                                 task._id,
@@ -682,7 +712,6 @@ function VolunteerApp() {
                     <h3>{task.title}</h3>
                     <p className="org-name">{task.organization}</p>
                     <p className="task-address">📍 {task.address}</p>
-                    <span className="category-tag">{task.category}</span>
                     <div className="badge-container">
                       <span className="duration-badge macro">
                         ⏱ {formatDuration(task.duration)}

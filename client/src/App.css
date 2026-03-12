@@ -1,585 +1,83 @@
-/* --- GLOBAL RESET & FONTS --- */
-:root {
-  --primary: #2563eb; /* Brand Blue */
-  --primary-hover: #1d4ed8;
-  --bg-color: #f8fafc; /* Light Gray Background */
-  --text-dark: #1e293b;
-  --text-light: #64748b;
-  --card-bg: #ffffff;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-dark);
-}
-
-/* --- MAIN CONTAINER (RESPONSIVE) --- */
-#root {
-  width: 100%;
-  max-width: 1200px; /* Standard Desktop Width */
+/* --- APP LAYOUT --- */
+.container {
+  font-family: "Inter", sans-serif;
+  color: #1e293b;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  box-sizing: border-box;
+  padding: 0 20px;
 }
-
-/* --- HEADER (3-COLUMN LAYOUT) --- */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
-  padding: 15px 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  padding: 20px 0;
+  border-bottom: 2px solid #f1f5f9;
   margin-bottom: 30px;
 }
-
-/* 1. Logo (Left) */
-.header-left {
-  flex: 1;
-  display: flex;
-  justify-content: flex-start;
-}
 .header-left h1 {
-  margin: 0;
   color: #2563eb;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
+  margin: 0;
 }
 
-/* 2. Welcome Text & Profile (Center) */
-.header-center {
-  flex: 2;
-  display: flex;
-  justify-content: center;
-  color: #333;
-  font-size: 1.1rem;
-}
-
-/* Layout the whole profile area (Image + Text) */
+/* --- PROFILE --- */
 .user-profile-header {
   display: flex;
   align-items: center;
-  gap: 15px; /* Added more gap */
-  padding: 5px;
-  border-radius: 30px;
+  gap: 12px;
 }
-
-/* 1. The Container for the Photo & Button */
 .profile-pic-container {
   position: relative;
-  /* Make the container slightly wider to hold the button on the OUTSIDE */
-  width: 70px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start; /* Keeps photo to the left */
+  width: 45px;
+  height: 45px;
 }
-
-/* 2. The Photo Circle */
 .profile-pic-nav {
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  background-color: #e2e8f0;
+  border: 2px solid #2563eb;
 }
-
-/* 3. The Upload Button (Now positioned outside) */
 .upload-label {
   position: absolute;
-  /* 👇 This moves it COMPLETELY to the outside-right 👇 */
-  right: -5px;
-  bottom: 8px; /* Vertically centered-ish */
-
-  background: #3b82f6;
+  bottom: -2px;
+  right: -2px;
+  background: #2563eb;
   color: white;
-  width: 20px; /* Shrunk slightly */
-  height: 20px; /* Shrunk slightly */
   border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid white;
-  transition: transform 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-
-  /* Centers whatever is inside (plus sign or camera icon) */
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.upload-label:hover {
-  transform: scale(1.15);
-  background: #2563eb;
-}
-
-/* Make sure the icon or text inside is centered and small */
-.upload-label svg {
-  width: 12px;
-  height: 12px;
-  fill: currentColor;
-}
-
-/* 3. Button (Right) */
-.header-right {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Buttons */
-.login-btn {
-  background: #2563eb;
-  color: white;
-  padding: 8px 20px;
-  border-radius: 6px;
-  border: none;
+  font-size: 10px;
   cursor: pointer;
-  font-weight: 600;
+}
+
+/* --- BUTTONS --- */
+.login-btn,
+.apply-btn,
+.submit-btn,
+.save-interests-btn {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 .logout-btn {
-  background: #ef4444;
+  background-color: #ef4444;
   color: white;
+  border: none;
   padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-/* Mobile Adjustment: Stack them vertically on small screens */
-@media (max-width: 768px) {
-  .app-header {
-    flex-direction: column;
-    gap: 15px;
-  }
-  .header-center {
-    order: 2;
-    margin-bottom: 10px;
-  }
-}
-
-/* --- FILTER SECTION --- */
-.filter-section {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.filter-section label {
-  font-weight: bold;
-  color: var(--text-dark);
-}
-
-.time-select {
-  padding: 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 1rem;
-  min-width: 200px;
-}
-
-/* --- TASK GRID (THE RESPONSIVE MAGIC) --- */
-.task-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 25px;
-}
-
-/* --- TASK CARD DESIGN --- */
-.task-card {
-  position: relative;
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-}
-
-.task-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.task-card h3 {
-  margin: 0 0 10px 0;
-  font-size: 1.25rem;
-  color: var(--text-dark);
-}
-
-.org-name {
-  color: var(--text-light);
-  margin-bottom: 20px;
-  font-size: 0.95rem;
-}
-
-.badge-container {
-  margin-top: auto;
-  padding-bottom: 15px;
-}
-
-.duration-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-.micro {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-.macro {
-  background-color: #f3e8ff;
-  color: #6b21a8;
-}
-
-.task-card button {
-  width: 100%;
-  padding: 12px;
   border-radius: 8px;
-  background-color: var(--primary);
-  color: white;
-  margin-top: 10px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-.task-card button:hover {
-  background-color: var(--primary-hover);
-}
-
-/* --- MOBILE OPTIMIZATION (< 768px) --- */
-@media (max-width: 768px) {
-  .app-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 15px;
-  }
-  .filter-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .task-list {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* --- MODAL --- */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
-}
-.modal-content input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-.submit-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--primary);
-  color: white;
-  border-radius: 6px;
-  margin-top: 10px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-.close-btn {
-  background: transparent;
-  color: #999;
-  margin-top: 10px;
-  border: none;
   cursor: pointer;
 }
-.toggle-text {
-  margin-top: 15px;
-  display: block;
-  color: #555;
-  text-decoration: underline;
-  cursor: pointer;
-}
-/* --- INTERESTS UI --- */
-.interests-section {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
-  border: 1px solid #e2e8f0;
-}
-
-.interests-section h3 {
-  margin-top: 0;
-  margin-bottom: 5px;
-  color: var(--primary);
-}
-
-.interests-section p {
-  color: var(--text-light);
-  margin-bottom: 15px;
-  font-size: 0.95rem;
-}
-
-.chips-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.interest-chip {
-  background: #f1f5f9;
-  color: var(--text-dark);
-  border: 2px solid transparent;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.interest-chip:hover {
-  background: #e2e8f0;
-}
-
-/* When a user selects a chip, it turns blue */
-.interest-chip.active {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 2px solid #3b82f6;
-}
-
-.save-interests-btn {
-  background: var(--text-dark);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.save-interests-btn:hover {
-  background: #000000;
-}
-
-/* Task Card Category Tag & Recommended Badge */
-.category-tag {
-  display: inline-block;
-  background: #f1f5f9;
-  color: #475569;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 15px;
-}
-
-.recommended-badge {
-  background: #fef08a;
-  color: #854d0e;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  margin-bottom: 10px;
-  display: inline-block;
-}
-/* --- MAP VIEW TOGGLE --- */
-.view-toggle {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.view-toggle button {
-  padding: 10px 20px;
-  border: 1px solid #cbd5e1;
-  background: white;
-  cursor: pointer;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 1rem;
-  color: var(--text-light);
-  transition: all 0.2s;
-}
-
-.view-toggle button:hover {
-  background: #f1f5f9;
-}
-
-.view-toggle button.active {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-}
-
-.map-container-wrapper {
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-/* Address styling */
-.task-address {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin: 5px 0 10px 0;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* Applied Button State */
-.applied-btn {
-  background-color: #22c55e !important;
-  color: white;
-  cursor: pointer; /* 👈 Changed from default to pointer */
-  border: none;
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  transition: opacity 0.2s;
-}
-
-.applied-btn:hover {
-  opacity: 0.8; /* 👈 Adds a slight fade so they know it's interactive */
-}
-
-.apply-btn {
-  background-color: var(--primary);
-  color: white;
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-/* Map Popup Buttons */
-.apply-btn-small {
-  margin-top: 8px;
-  width: 100%;
-  padding: 6px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.applied-btn-small {
-  margin-top: 8px;
-  width: 100%;
-  padding: 6px;
-  background: #22c55e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: default;
-}
-/* Save Heart Button Styling */
-.heart-btn {
-  position: absolute !important;
-  top: 15px !important;
-  right: 15px !important;
-  background-color: transparent !important; /* Kills the blue background */
-  border: none !important;
-  width: auto !important; /* Stops it from stretching across the card */
-  padding: 0 !important;
-  font-size: 1.5rem !important;
-  cursor: pointer;
-  z-index: 10;
-  box-shadow: none !important; /* Removes any shadow */
-  transition: transform 0.2s ease;
-}
-.heart-btn:hover {
-  transform: scale(1.2);
-  background-color: transparent !important; /* Ensures no background appears on hover */
-}
-
-/* --- SAVED FILTER BUTTON FIX --- */
-.save-filter-btn {
-  margin-left: auto; /* Keeps it on the right */
-  border: 2px solid #ef4444 !important;
-  color: #ef4444 !important;
-  background: white;
-
-  /* 👇 Match the height of List/Map buttons 👇 */
-  padding: 0 15px !important;
-  height: 40px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.save-filter-btn:hover {
-  background-color: #fef2f2;
-}
-
-.save-filter-btn.active {
-  background-color: #ef4444 !important;
-  color: white !important;
-}
-
-/* Ensure the container doesn't stretch weirdly */
-.view-toggle {
-  display: flex;
-  align-items: center; /* Vertically centers all buttons in the row */
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
 .create-task-btn {
-  background-color: #059669; /* Green */
+  background-color: #059669;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -588,186 +86,158 @@ body {
   cursor: pointer;
   margin-right: 10px;
 }
-
-.task-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.task-form input,
-.task-form select {
-  padding: 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 1rem;
-}
-
-.geo-inputs {
-  display: flex;
-  gap: 10px;
-}
-
-.geo-inputs input {
-  flex: 1;
-}
-
-.floating-success {
-  background: #dcfce7;
-  color: #166534;
-  padding: 10px;
+.applied-btn {
+  background-color: #10b981 !important;
+  color: white;
+  border: none;
+  padding: 10px 20px;
   border-radius: 8px;
-  margin-bottom: 20px;
-  text-align: center;
-  font-weight: bold;
-  border: 1px solid #166534;
-}
-
-/* --- DELETE BUTTON FIX --- */
-.delete-btn {
-  position: absolute !important;
-  top: 15px !important;
-  right: 45px !important; /* 👈 Moved to the right side, next to the heart! */
-  background-color: transparent !important;
-  border: none !important;
-  width: auto !important;
-  padding: 0 !important;
-  font-size: 1.2rem !important;
   cursor: pointer;
-  z-index: 10;
-  box-shadow: none !important;
-  transition: transform 0.2s ease;
-  opacity: 0.6;
 }
 
-.delete-btn:hover {
-  transform: scale(1.2);
-  opacity: 1;
-}
-/* --- MODERN SEARCH & FILTER STYLES --- */
+/* --- SEARCH & FILTERS --- */
 .search-filter-container {
   display: flex;
   gap: 15px;
   align-items: center;
-  flex-wrap: wrap;
   background: white;
   padding: 15px 20px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   margin-bottom: 25px;
+  border: 1px solid #e2e8f0;
 }
-
 .clean-search-input {
   flex: 1;
-  /* 👇 Increased left padding from 16px to 40px to make room for the new icon */
-  padding: 12px 16px 12px 40px;
+  padding: 12px 12px 12px 40px;
   border-radius: 8px;
   border: 1px solid #cbd5e1 !important;
-  font-size: 1rem;
   background-color: #f8fafc !important;
-  color: #334155 !important;
-  transition: all 0.2s ease;
-
-  /* 👇 NEW: Adds a subtle, professional SVG search icon */
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3ccircle cx='11' cy='11' r='8'%3e%3c/circle%3e%3cline x1='21' y1='21' x2='16.65' y2='16.65'%3e%3c/line%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: 12px center;
-  background-size: 18px 18px;
+  background-size: 18px;
 }
 
-.clean-search-input::placeholder {
-  color: #94a3b8 !important;
-}
-
-.clean-search-input:focus {
-  outline: none;
-  border-color: #2563eb !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.time-filter-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: bold;
-  color: #334155;
-}
-
-.clean-select {
-  padding: 12px 35px 12px 16px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1 !important;
-  font-size: 1rem;
-  background-color: #f8fafc !important;
-  color: #334155 !important;
-  cursor: pointer;
-  appearance: none; /* Removes the ugly default browser arrow */
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23334155%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px top 50%;
-  background-size: 10px auto;
-  transition: all 0.2s ease;
-}
-
-.clean-select:focus {
-  outline: none;
-  border-color: #2563eb !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.manage-section {
-  padding: 20px 0;
-}
-
-.task-grid {
+/* --- TASK CARDS --- */
+.task-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
-  margin-top: 20px;
+}
+.task-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+.task-card:hover {
+  transform: translateY(-4px);
+}
+.duration-badge {
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+/* --- STATUS BANNERS --- */
+.status-banner {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+.status-banner.pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+.status-banner.accepted {
+  background: #dcfce7;
+  color: #166534;
+}
+.status-banner.declined {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* --- DASHBOARDS --- */
+.view-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+.view-toggle button {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+.view-toggle button.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
 }
 
 .manage-card {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
 }
-
-.applicant-list {
-  margin: 15px 0;
-  border-top: 1px solid #f1f5f9;
-  padding-top: 10px;
-}
-
 .applicant-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  font-size: 0.9rem;
   border-bottom: 1px dashed #f1f5f9;
 }
-
 .action-btns button {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 1.1rem;
-  margin-left: 5px;
 }
 
-.delete-task-btn {
-  width: 100%;
+/* --- MODALS --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  width: 400px;
+  max-width: 90%;
+}
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 15px;
-  background-color: #fee2e2;
-  color: #b91c1c;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
+}
+.task-form input,
+.task-form select {
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
 }
