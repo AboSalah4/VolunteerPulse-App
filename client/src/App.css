@@ -441,8 +441,6 @@ body {
   background: #fee2e2 !important;
   color: #991b1b !important;
 }
-
-/* 👇 FIXED: Student now gets a nice blue banner when they are fully verified */
 .status-banner.completed {
   background: #e0e7ff !important;
   color: #3730a3 !important;
@@ -519,7 +517,7 @@ body {
   cursor: pointer;
 }
 
-/* --- ORG DASHBOARD --- */
+/* --- ORG DASHBOARD & ACTION BUTTONS --- */
 .applicant-row {
   display: flex;
   justify-content: space-between;
@@ -531,23 +529,56 @@ body {
   display: flex;
   gap: 10px;
 }
-.action-btns button {
-  background: none !important;
+
+/* 👇 NEW: Text buttons for Accept and Decline */
+.accept-action-btn {
+  background-color: #16a34a !important;
+  color: white !important;
   border: none !important;
+  padding: 6px 12px !important;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.85rem;
   cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
   transition: transform 0.2s;
 }
-.action-btns button:hover {
-  transform: scale(1.1);
+.accept-action-btn:hover {
+  background-color: #15803d !important;
+  transform: scale(1.05);
 }
-.text-green-600 {
-  color: #16a34a !important;
+
+.decline-action-btn {
+  background-color: #ef4444 !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 12px !important;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
-.text-red-600 {
-  color: #dc2626 !important;
+.decline-action-btn:hover {
+  background-color: #dc2626 !important;
+  transform: scale(1.05);
 }
+
+.complete-btn {
+  background-color: #fef08a !important;
+  color: #a16207 !important;
+  border: 1px solid #fde047 !important;
+  padding: 6px 12px !important;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.complete-btn:hover {
+  background-color: #fde047 !important;
+  transform: scale(1.05);
+}
+
 .delete-task-btn {
   width: 100%;
   margin-top: 15px;
@@ -562,23 +593,6 @@ body {
   justify-content: center;
   align-items: center;
   gap: 8px;
-}
-
-/* 👇 FIXED: Styling for the new Verify button for Organizations */
-.complete-btn {
-  background-color: #fef08a !important;
-  color: #a16207 !important;
-  border: 1px solid #fde047 !important;
-  padding: 6px 12px !important;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-}
-.complete-btn:hover {
-  background-color: #fde047 !important;
-  transform: scale(1.05);
 }
 
 /* --- RESPONSIVE MEDIA QUERIES --- */

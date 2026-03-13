@@ -42,11 +42,6 @@ const Icons = {
       <line x1="15" y1="6" x2="15" y2="21"></line>
     </svg>
   ),
-  Check: () => (
-    <svg className="svg-icon" viewBox="0 0 24 24">
-      <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-  ),
   FileCheck: () => (
     <svg className="svg-icon" viewBox="0 0 24 24">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -102,12 +97,6 @@ const Icons = {
       stroke="#eab308"
     >
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-    </svg>
-  ),
-  X: () => (
-    <svg className="svg-icon" viewBox="0 0 24 24">
-      <line x1="18" y1="6" x2="6" y2="18"></line>
-      <line x1="6" y1="6" x2="18" y2="18"></line>
     </svg>
   ),
 };
@@ -251,7 +240,6 @@ function VolunteerApp() {
           : `Applicant ${status}!`,
       );
 
-      // 👇 FIXED LOGIC: Instantly updates the badge if you are testing on your own account!
       if (
         res.data.updatedPoints !== undefined &&
         res.data.verifiedUserId === user.id
@@ -857,6 +845,7 @@ function VolunteerApp() {
                         </div>
 
                         <div className="action-btns">
+                          {/* 👇 FIXED: Replaced small icons with solid text buttons */}
                           {app.status === "Pending" && (
                             <>
                               <button
@@ -867,10 +856,10 @@ function VolunteerApp() {
                                     "Accepted",
                                   )
                                 }
-                                className="text-green-600 hover:scale-110"
-                                title="Accept"
+                                className="accept-action-btn"
+                                title="Accept Applicant"
                               >
-                                <Icons.Check />
+                                Accept
                               </button>
                               <button
                                 onClick={() =>
@@ -880,10 +869,10 @@ function VolunteerApp() {
                                     "Declined",
                                   )
                                 }
-                                className="text-red-600 hover:scale-110"
-                                title="Decline"
+                                className="decline-action-btn"
+                                title="Decline Applicant"
                               >
-                                <Icons.X />
+                                Decline
                               </button>
                             </>
                           )}
