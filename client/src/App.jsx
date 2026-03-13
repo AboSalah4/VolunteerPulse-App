@@ -444,8 +444,8 @@ function VolunteerApp() {
         {/* 👇 UPDATED: Added the favicon.svg next to the logo text */}
         <div className="header-left">
           <div className="logo-container">
-            <h1>VolunteerPulse</h1>
             <img src="/favicon.svg" alt="Pulse Logo" className="header-logo" />
+            <h1>VolunteerPulse</h1>
           </div>
         </div>
 
