@@ -38,7 +38,7 @@ body {
   width: 100%;
 }
 
-/* --- HEADER --- */
+/* --- HEADER & LOGO --- */
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -53,6 +53,18 @@ body {
   margin: 0;
   font-weight: 800;
 }
+
+/* 👇 NEW: Alignment for the logo next to text */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-logo {
+  height: 32px;
+  width: auto;
+}
+
 .user-profile-header {
   display: flex;
   align-items: center;
@@ -530,7 +542,6 @@ body {
   gap: 10px;
 }
 
-/* 👇 NEW: Text buttons for Accept and Decline */
 .accept-action-btn {
   background-color: #16a34a !important;
   color: white !important;

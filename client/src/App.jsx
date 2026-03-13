@@ -441,9 +441,14 @@ function VolunteerApp() {
   return (
     <div className="container">
       <header className="app-header">
+        {/* 👇 UPDATED: Added the favicon.svg next to the logo text */}
         <div className="header-left">
-          <h1>VolunteerPulse</h1>
+          <div className="logo-container">
+            <h1>VolunteerPulse</h1>
+            <img src="/favicon.svg" alt="Pulse Logo" className="header-logo" />
+          </div>
         </div>
+
         <div className="header-center">
           {user && (
             <div className="user-profile-header">
@@ -845,7 +850,6 @@ function VolunteerApp() {
                         </div>
 
                         <div className="action-btns">
-                          {/* 👇 FIXED: Replaced small icons with solid text buttons */}
                           {app.status === "Pending" && (
                             <>
                               <button
