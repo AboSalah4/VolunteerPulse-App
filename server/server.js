@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 require("dotenv").config();
+const applicationRoutes = require("./routes/applicationRoutes");
 
 const sendEmail = require("./sendEmail");
 const { upload } = require("./cloudinaryConfig");
@@ -12,6 +13,7 @@ const { upload } = require("./cloudinaryConfig");
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/api/applications', applicationRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -134,13 +136,11 @@ app.post("/api/update-status", async (req, res) => {
       });
     }
     // 👇 NEW: Send the new points back to the frontend
-    res
-      .status(200)
-      .json({
-        message: "Status updated",
-        updatedPoints,
-        verifiedUserId: userId,
-      });
+    res.status(200).json({
+      message: "Status updated",
+      updatedPoints,
+      verifiedUserId: userId,
+    });
   } catch (err) {
     res.status(500).json({ error: "Update failed" });
   }
