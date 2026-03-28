@@ -143,7 +143,7 @@ app.post("/api/update-status", async (req, res) => {
       applicant.status = status;
       await task.save();
 
-      await sendEmail({
+      sendEmail({
         email: applicant.userEmail,
         subject: `Update: ${task.title}`,
         message: `Your application for "${task.title}" is now ${status.toLowerCase()}.`,
@@ -309,7 +309,7 @@ app.post("/api/forgot-password", async (req, res) => {
   user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
   await user.save();
   const resetUrl = `https://volunteer-pulse-eight.vercel.app/reset-password/${resetToken}`;
-  await sendEmail({
+  sendEmail({
     email: user.email,
     subject: "Password Reset",
     message: `Link: ${resetUrl}`,
