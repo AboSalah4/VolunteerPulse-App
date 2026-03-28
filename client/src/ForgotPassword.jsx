@@ -10,9 +10,10 @@ const ForgotPassword = () => {
     try {
       // Points to your backend route
       const res = await axios.post(
-        "http://localhost:5001/api/forgot-password",
+        "https://volunteer-pulse-backend.onrender.com/api/forgot-password",
         { email },
       );
+
       setMessage(res.data.message);
     } catch (err) {
       setMessage(err.response?.data?.message || "An error occurred");
