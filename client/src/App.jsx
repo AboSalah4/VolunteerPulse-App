@@ -396,6 +396,7 @@ function VolunteerApp() {
       });
       setSuccessMsg("Password updated!");
       setIsResetMode(false);
+      setShowLogin(false);
       setResetToken("");
       window.history.pushState({}, "", "/");
     } catch (err) {
