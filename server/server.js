@@ -13,7 +13,7 @@ const { upload } = require("./cloudinaryConfig");
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use('/api/applications', applicationRoutes);
+app.use("/api/applications", applicationRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -37,6 +37,8 @@ const TaskSchema = new mongoose.Schema({
       userName: String,
       userEmail: String,
       status: { type: String, default: "Pending" },
+      isFlagged: { type: Boolean, default: false },
+      flagReason: { type: String, default: "" },
     },
   ],
 });
@@ -98,6 +100,18 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
+// 👇 NEW: Edit Task Route
+app.put("/api/tasks/:id", async (req, res) => {
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    res.json(updatedTask);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update task" });
+  }
+});
+
 app.get("/api/my-tasks/:email", async (req, res) => {
   try {
     const myTasks = await Task.find({ createdBy: req.params.email });
@@ -122,7 +136,7 @@ app.post("/api/update-status", async (req, res) => {
           student.totalVolunteerMinutes =
             (student.totalVolunteerMinutes || 0) + task.duration;
           await student.save();
-          updatedPoints = student.totalVolunteerMinutes; // 👇 NEW: Track the exact updated points
+          updatedPoints = student.totalVolunteerMinutes;
         }
       }
 
@@ -135,7 +149,7 @@ app.post("/api/update-status", async (req, res) => {
         message: `Your application for "${task.title}" is now ${status.toLowerCase()}.`,
       });
     }
-    // 👇 NEW: Send the new points back to the frontend
+
     res.status(200).json({
       message: "Status updated",
       updatedPoints,
@@ -143,6 +157,36 @@ app.post("/api/update-status", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: "Update failed" });
+  }
+});
+
+app.post("/api/flag-application", async (req, res) => {
+  try {
+    const { taskId, userId, reason } = req.body;
+    const task = await Task.findById(taskId);
+    const applicant = task.applicants.find((a) => a.userId === userId);
+
+    applicant.isFlagged = true;
+    applicant.flagReason = reason;
+
+    let updatedPoints = undefined;
+    if (applicant.status === "Completed") {
+      const student = await User.findById(userId);
+      if (student) {
+        student.totalVolunteerMinutes = Math.max(
+          0,
+          (student.totalVolunteerMinutes || 0) - task.duration,
+        );
+        await student.save();
+        updatedPoints = student.totalVolunteerMinutes;
+      }
+    }
+    await task.save();
+    res
+      .status(200)
+      .json({ message: "Flagged", updatedPoints, flaggedUserId: userId });
+  } catch (err) {
+    res.status(500).json({ error: "Flag failed" });
   }
 });
 

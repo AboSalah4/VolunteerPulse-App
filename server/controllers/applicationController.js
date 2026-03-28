@@ -37,3 +37,30 @@ exports.updateApplicationStatus = async (req, res) => {
       .json({ message: "Error updating status", error: error.message });
   }
 };
+
+// VP-Q27 — Flag Dishonest Completion Reports
+exports.flagApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const flaggedApp = await Application.findByIdAndUpdate(
+      id,
+      { isFlagged: true, flagReason: reason },
+      { new: true },
+    );
+
+    if (!flaggedApp) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    res.status(200).json({
+      message: "Application has been flagged for review.",
+      flaggedApp,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error flagging application", error: error.message });
+  }
+};

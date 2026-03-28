@@ -53,8 +53,6 @@ body {
   margin: 0;
   font-weight: 800;
 }
-
-/* 👇 NEW: Alignment for the logo next to text */
 .logo-container {
   display: flex;
   align-items: center;
@@ -68,18 +66,18 @@ body {
 .user-profile-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px; /* Slightly increased gap */
   color: #1e293b !important;
 }
 .profile-pic-container {
   position: relative;
-  width: 45px;
-  height: 45px;
+  width: 65px; /* Increased from 45px */
+  height: 65px; /* Increased from 45px */
   flex-shrink: 0;
 }
 .profile-pic-nav {
-  width: 45px;
-  height: 45px;
+  width: 65px; /* Increased from 45px */
+  height: 65px; /* Increased from 45px */
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #2563eb;
@@ -107,23 +105,50 @@ body {
   gap: 10px;
 }
 
-/* --- BADGE & PULSE TRACKER STYLES --- */
+/* 👇 SCALED BADGE & PULSE TRACKER STYLES */
 .user-stats {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+.welcome-text {
+  font-size: 1.15rem; /* Increased from 1.1rem */
+  color: #334155;
+}
+.welcome-text strong {
+  color: #0f172a;
+  font-weight: 800;
+}
 .pulse-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  border: 1px solid;
+  gap: 6px;
+  padding: 4px 10px; /* Decreased padding */
+  border-radius: 15px;
+  font-size: 0.9rem; /* Scaled down */
+  font-weight: 900;
+  border: 2px solid;
   width: fit-content;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+  margin-top: 5px;
 }
+.badge-icon {
+  font-size: 1.2rem; /* Scaled down */
+}
+.badge-time {
+  font-size: 1.05rem; /* Scaled down */
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 2px 6px; /* Scaled down */
+  border-radius: 8px;
+  color: inherit;
+}
+.badge-title {
+  font-size: 0.85rem; /* Scaled down */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+/* Colors */
 .badge-gold {
   background: #fef08a;
   color: #a16207;
@@ -606,6 +631,24 @@ body {
   gap: 8px;
 }
 
+/* --- NEW: FLAG BUTTON --- */
+.flag-btn {
+  background-color: #fef2f2 !important;
+  color: #ef4444 !important;
+  border: 1px solid #fca5a5 !important;
+  padding: 6px 12px !important;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin-left: 8px;
+}
+.flag-btn:hover {
+  background-color: #fee2e2 !important;
+  transform: scale(1.05);
+}
+
 /* --- RESPONSIVE MEDIA QUERIES --- */
 @media (max-width: 768px) {
   .app-header {
@@ -651,4 +694,49 @@ body {
     justify-content: space-between;
     margin-top: 10px;
   }
+}
+/* --- NEW: MANAGE CARD EDITING STYLES --- */
+.manage-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+.manage-duration-tag {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #bfdbfe;
+}
+.manage-footer-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+.edit-task-btn {
+  flex: 1;
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+.edit-task-btn:hover {
+  background-color: #e2e8f0 !important;
+}
+.delete-task-btn {
+  flex: 1;
+  margin-top: 0 !important;
 }

@@ -89,6 +89,12 @@ const Icons = {
       <line x1="5" y1="12" x2="19" y2="12"></line>
     </svg>
   ),
+  Edit: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+  ),
   Star: () => (
     <svg
       className="svg-icon"
@@ -116,6 +122,7 @@ function VolunteerApp() {
   const [resetToken, setResetToken] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false); // 👇 NEW
   const [isSubmittingTask, setIsSubmittingTask] = useState(false);
   const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
@@ -128,6 +135,8 @@ function VolunteerApp() {
     category: "Community",
     address: "",
   });
+
+  const [currentEditTask, setCurrentEditTask] = useState(null); // 👇 NEW
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -144,7 +153,7 @@ function VolunteerApp() {
     "Community",
     "Tech",
   ];
-  const API_URL = "https://volunteer-pulse-backend.onrender.com";
+  const API_URL = "http://localhost:5001";
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -227,6 +236,53 @@ function VolunteerApp() {
     }
   };
 
+  // 👇 NEW: Edit Task Logic
+  const handleUpdateTask = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmittingTask(true);
+
+    let totalMinutes = parseInt(currentEditTask.durationValue);
+    if (currentEditTask.durationUnit === "Hours") totalMinutes *= 60;
+    if (currentEditTask.durationUnit === "Days") totalMinutes *= 1440;
+
+    try {
+      const taskPayload = { ...currentEditTask, duration: totalMinutes };
+      await axios.put(
+        `${API_URL}/api/tasks/${currentEditTask._id}`,
+        taskPayload,
+      );
+      setSuccessMsg("Task updated!");
+      setShowEditModal(false);
+      fetchTasks();
+      if (viewMode === "manage") fetchMyTasks();
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError("Failed to update task.");
+    } finally {
+      setIsSubmittingTask(false);
+    }
+  };
+
+  const openEditModal = (task) => {
+    let val = task.duration;
+    let unit = "Minutes";
+    if (val % 1440 === 0) {
+      val /= 1440;
+      unit = "Days";
+    } else if (val % 60 === 0) {
+      val /= 60;
+      unit = "Hours";
+    }
+
+    setCurrentEditTask({
+      ...task,
+      durationValue: val,
+      durationUnit: unit,
+    });
+    setShowEditModal(true);
+  };
+
   const handleUpdateStatus = async (taskId, userId, status) => {
     try {
       const res = await axios.post(`${API_URL}/api/update-status`, {
@@ -252,6 +308,33 @@ function VolunteerApp() {
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
       console.error("Status update failed");
+    }
+  };
+
+  const handleFlag = async (taskId, userId) => {
+    const reason = prompt(
+      "Please enter the reason for flagging this report as dishonest:",
+    );
+    if (!reason) return;
+
+    try {
+      const res = await axios.post(`${API_URL}/api/flag-application`, {
+        taskId,
+        userId,
+        reason,
+      });
+      setSuccessMsg("Application successfully flagged for review!");
+
+      if (res.data.updatedPoints !== undefined && userId === user.id) {
+        login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
+      }
+
+      fetchMyTasks();
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      console.error("Error flagging:", err);
+      setError("Failed to flag application.");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
@@ -432,16 +515,20 @@ function VolunteerApp() {
   };
 
   const pulseData = getPulseData(user?.totalVolunteerMinutes);
-  const totalHours = Math.floor((user?.totalVolunteerMinutes || 0) / 60);
-  const displayTime =
-    totalHours >= 720
-      ? `${Math.floor(totalHours / 24)} Days`
-      : `${totalHours} Hours`;
+  const totalMins = user?.totalVolunteerMinutes || 0;
+
+  const d = Math.floor(totalMins / 1440);
+  const h = Math.floor((totalMins % 1440) / 60);
+  const m = totalMins % 60;
+
+  let displayTime = "";
+  if (d > 0) displayTime += `${d}d `;
+  if (h > 0 || d > 0) displayTime += `${h}h `;
+  displayTime += `${m}m`;
 
   return (
     <div className="container">
       <header className="app-header">
-        {/* 👇 UPDATED: Added the favicon.svg next to the logo text */}
         <div className="header-left">
           <div className="logo-container">
             <img src="/favicon.svg" alt="Pulse Logo" className="header-logo" />
@@ -479,7 +566,9 @@ function VolunteerApp() {
                   className={`pulse-badge ${pulseData.css}`}
                   title={`${user.totalVolunteerMinutes || 0} Total Minutes Volunteered`}
                 >
-                  {pulseData.icon} {displayTime} ({pulseData.title})
+                  <span className="badge-icon">{pulseData.icon}</span>
+                  <span className="badge-time">{displayTime}</span>
+                  <span className="badge-title">({pulseData.title})</span>
                 </div>
               </div>
             </div>
@@ -591,6 +680,70 @@ function VolunteerApp() {
         </div>
       )}
 
+      {/* 👇 NEW: EDIT MODAL */}
+      {showEditModal && currentEditTask && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Edit Opportunity</h2>
+            <form onSubmit={handleUpdateTask} className="task-form">
+              <input
+                type="text"
+                placeholder="Title"
+                required
+                value={currentEditTask.title}
+                onChange={(e) =>
+                  setCurrentEditTask({
+                    ...currentEditTask,
+                    title: e.target.value,
+                  })
+                }
+              />
+              <div className="geo-inputs">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Amount"
+                  required
+                  value={currentEditTask.durationValue}
+                  onChange={(e) =>
+                    setCurrentEditTask({
+                      ...currentEditTask,
+                      durationValue: e.target.value,
+                    })
+                  }
+                />
+                <select
+                  value={currentEditTask.durationUnit}
+                  onChange={(e) =>
+                    setCurrentEditTask({
+                      ...currentEditTask,
+                      durationUnit: e.target.value,
+                    })
+                  }
+                >
+                  <option value="Minutes">Minutes</option>
+                  <option value="Hours">Hours</option>
+                  <option value="Days">Days</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                className="submit-btn"
+                disabled={isSubmittingTask}
+              >
+                {isSubmittingTask ? "Saving..." : "Update Task"}
+              </button>
+            </form>
+            <button
+              className="close-btn"
+              onClick={() => setShowEditModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {showLogin && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -691,7 +844,26 @@ function VolunteerApp() {
       )}
 
       <div className="main-content">
-        {successMsg && <div className="floating-success">{successMsg}</div>}
+        {error && (
+          <div
+            className="floating-error"
+            style={{ color: "red", textAlign: "center", marginBottom: "10px" }}
+          >
+            {error}
+          </div>
+        )}
+        {successMsg && (
+          <div
+            className="floating-success"
+            style={{
+              color: "green",
+              textAlign: "center",
+              marginBottom: "10px",
+            }}
+          >
+            {successMsg}
+          </div>
+        )}
 
         {user && (
           <div className="interests-section">
@@ -818,7 +990,14 @@ function VolunteerApp() {
             <div className="task-grid">
               {myCreatedTasks.map((task) => (
                 <div key={task._id} className="manage-card">
-                  <h3>{task.title}</h3>
+                  {/* 👇 UPDATED: Added duration display in the card */}
+                  <div className="manage-card-header">
+                    <h3>{task.title}</h3>
+                    <span className="manage-duration-tag">
+                      <Icons.Clock /> {formatDuration(task.duration)}
+                    </span>
+                  </div>
+
                   <div className="applicant-list">
                     {task.applicants.map((app) => (
                       <div key={app.userId} className="applicant-row">
@@ -831,6 +1010,9 @@ function VolunteerApp() {
                         >
                           <div>
                             <strong>{app.userName}</strong>{" "}
+                            {app.isFlagged && (
+                              <span title={app.flagReason}>🚩</span>
+                            )}
                             <span
                               style={{ fontSize: "0.85rem", color: "#64748b" }}
                             >
@@ -880,32 +1062,57 @@ function VolunteerApp() {
                               </button>
                             </>
                           )}
+
                           {app.status === "Accepted" && (
-                            <button
-                              onClick={() =>
-                                handleUpdateStatus(
-                                  task._id,
-                                  app.userId,
-                                  "Completed",
-                                )
-                              }
-                              className="complete-btn"
-                              title="Verify attendance and award points"
-                            >
-                              Verify 🏅
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleUpdateStatus(
+                                    task._id,
+                                    app.userId,
+                                    "Completed",
+                                  )
+                                }
+                                className="complete-btn"
+                                title="Verify attendance and award points"
+                              >
+                                Verify 🏅
+                              </button>
+                              <button
+                                onClick={() => handleFlag(task._id, app.userId)}
+                                className="flag-btn"
+                                title="Flag as Dishonest"
+                              >
+                                🚩 Flag
+                              </button>
+                            </>
                           )}
                           {app.status === "Completed" && (
-                            <span
-                              style={{
-                                color: "#16a34a",
-                                fontWeight: "bold",
-                                fontSize: "0.85rem",
-                              }}
-                            >
-                              Verified 🎉
-                            </span>
+                            <>
+                              <span
+                                style={{
+                                  color: "#16a34a",
+                                  fontWeight: "bold",
+                                  fontSize: "0.85rem",
+                                  marginRight: "8px",
+                                }}
+                              >
+                                Verified 🎉
+                              </span>
+                              {!app.isFlagged && (
+                                <button
+                                  onClick={() =>
+                                    handleFlag(task._id, app.userId)
+                                  }
+                                  className="flag-btn"
+                                  title="Flag as Dishonest"
+                                >
+                                  🚩 Flag
+                                </button>
+                              )}
+                            </>
                           )}
+
                           {app.status === "Declined" && (
                             <span
                               style={{
@@ -921,12 +1128,21 @@ function VolunteerApp() {
                       </div>
                     ))}
                   </div>
-                  <button
-                    className="delete-task-btn"
-                    onClick={() => handleDeleteTask(task._id)}
-                  >
-                    <Icons.Trash /> Delete Task
-                  </button>
+
+                  <div className="manage-footer-btns">
+                    <button
+                      className="edit-task-btn"
+                      onClick={() => openEditModal(task)}
+                    >
+                      <Icons.Edit /> Edit Task
+                    </button>
+                    <button
+                      className="delete-task-btn"
+                      onClick={() => handleDeleteTask(task._id)}
+                    >
+                      <Icons.Trash /> Delete Task
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
