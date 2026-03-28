@@ -1256,45 +1256,71 @@ function VolunteerApp() {
           </div>
         ) : viewMode === "leaderboard" ? (
           <div className="leaderboard-section">
-            <h2>🏆 Top 10 Volunteers</h2>
-            <div className="leaderboard-list">
-              {leaderboard.map((v, index) => (
+            <h2>🌟 Volunteer Talent Directory</h2>
+            <p className="directory-subtitle">
+              Explore our dedicated community and connect with top talent.
+            </p>
+
+            {/* Grouping logic */}
+            {["Gold", "Silver", "Bronze", "Starter"].map((level) => {
+              const filteredGroup = leaderboard.filter((v) => {
+                const hours = Math.floor((v.totalVolunteerMinutes || 0) / 60);
+                if (level === "Gold") return hours >= 720;
+                if (level === "Silver") return hours >= 50 && hours < 720;
+                if (level === "Bronze") return hours >= 10 && hours < 50;
+                return hours < 10;
+              });
+
+              if (filteredGroup.length === 0) return null;
+
+              return (
                 <div
-                  key={v._id}
-                  className={`leaderboard-row rank-${index + 1}`}
+                  key={level}
+                  className={`directory-group group-${level.toLowerCase()}`}
                 >
-                  <div className="rank-num">{index + 1}</div>
-                  <img
-                    src={
-                      v.profilePic ||
-                      `https://ui-avatars.com/api/?name=${v.name}`
-                    }
-                    className="leaderboard-pic"
-                    alt=""
-                  />
-                  <div className="leaderboard-info">
-                    <span className="leaderboard-name">{v.name}</span>
-                    <span className="leaderboard-points">
-                      {v.totalVolunteerMinutes || 0} Minutes
-                    </span>
+                  <h3 className="group-header">
+                    {level === "Gold"
+                      ? "🏆 Gold Level (720+ hrs)"
+                      : level === "Silver"
+                        ? "🥈 Silver Level (50+ hrs)"
+                        : level === "Bronze"
+                          ? "🥉 Bronze Level (10+ hrs)"
+                          : "🌱 Rising Stars"}
+                  </h3>
+                  <div className="leaderboard-list">
+                    {filteredGroup.map((v) => (
+                      <div key={v._id} className="leaderboard-row">
+                        <img
+                          src={
+                            v.profilePic ||
+                            `https://ui-avatars.com/api/?name=${v.name}`
+                          }
+                          alt={v.name}
+                          className="leaderboard-pic"
+                        />
+                        <div className="leaderboard-info">
+                          <span className="leaderboard-name">{v.name}</span>
+                          <span className="leaderboard-points">
+                            {v.totalVolunteerMinutes || 0} Minutes
+                          </span>
+                        </div>
+                        {v.linkedInUrl && (
+                          <a
+                            href={v.linkedInUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="linkedin-leader-link"
+                            title="View Professional Profile"
+                          >
+                            <Icons.LinkedIn />
+                          </a>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  {/* 👇 VP-E06: RESTORED LinkedIn icon on Leaderboard */}
-                  {v.linkedInUrl && (
-                    <a
-                      href={v.linkedInUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="linkedin-leader-link"
-                    >
-                      <Icons.LinkedIn />
-                    </a>
-                  )}
-                  {index === 0 && <span className="medal">🥇</span>}
-                  {index === 1 && <span className="medal">🥈</span>}
-                  {index === 2 && <span className="medal">🥉</span>}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         ) : (
           <>

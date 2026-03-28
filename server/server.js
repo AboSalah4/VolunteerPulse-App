@@ -328,15 +328,13 @@ app.post(
 // 👇 VP-E06 / VP-Q28 Leaderboard Route
 app.get("/api/leaderboard", async (req, res) => {
   try {
-    const topVolunteers = await User.find(
-      {},
-      "name profilePic totalVolunteerMinutes linkedInUrl",
-    )
-      .sort({ totalVolunteerMinutes: -1 })
-      .limit(10);
-    res.json(topVolunteers);
+    // Removed .limit(10) so employers can find ANYONE
+    const allVolunteers = await User.find({}, "name profilePic totalVolunteerMinutes linkedInUrl")
+      .sort({ totalVolunteerMinutes: -1 }); 
+    
+    res.json(allVolunteers);
   } catch (err) {
-    res.status(500).json({ error: "Failed to load leaderboard" });
+    res.status(500).json({ error: "Failed to load directory" });
   }
 });
 
