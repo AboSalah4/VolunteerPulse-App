@@ -52,7 +52,7 @@ const Icons = {
   Settings: () => (
     <svg className="svg-icon" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
     </svg>
   ),
   Heart: ({ filled }) => (
@@ -122,10 +122,19 @@ function VolunteerApp() {
   const [resetToken, setResetToken] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false); // 👇 NEW
+  const [showEditModal, setShowEditModal] = useState(false);
   const [isSubmittingTask, setIsSubmittingTask] = useState(false);
   const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+
+  // 👇 LEADERBOARD STATE (VP-Q28)
+  const [leaderboard, setLeaderboard] = useState([]);
+  const fetchLeaderboard = () => {
+    axios
+      .get(`${API_URL}/api/leaderboard`)
+      .then((res) => setLeaderboard(res.data))
+      .catch((err) => console.error("Leaderboard error:", err));
+  };
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -136,7 +145,7 @@ function VolunteerApp() {
     address: "",
   });
 
-  const [currentEditTask, setCurrentEditTask] = useState(null); // 👇 NEW
+  const [currentEditTask, setCurrentEditTask] = useState(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -153,6 +162,8 @@ function VolunteerApp() {
     "Community",
     "Tech",
   ];
+
+  // Update this to your live Render URL when you push!
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
   useEffect(() => {
@@ -188,6 +199,7 @@ function VolunteerApp() {
   useEffect(() => {
     fetchTasks();
     if (viewMode === "manage") fetchMyTasks();
+    if (viewMode === "leaderboard") fetchLeaderboard(); // Trigger fetch
   }, [filter, viewMode, user]);
 
   const handleCreateTask = async (e) => {
@@ -236,7 +248,6 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 NEW: Edit Task Logic
   const handleUpdateTask = async (e) => {
     e.preventDefault();
     setError("");
@@ -681,7 +692,6 @@ function VolunteerApp() {
         </div>
       )}
 
-      {/* 👇 NEW: EDIT MODAL */}
       {showEditModal && currentEditTask && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -941,6 +951,16 @@ function VolunteerApp() {
               {showSavedOnly ? "Showing Saved" : "Show Saved"}
             </button>
           )}
+          {/* 👇 THE NEW LEADERBOARD BUTTON */}
+          <button
+            className={viewMode === "leaderboard" ? "active" : ""}
+            onClick={() => {
+              setViewMode("leaderboard");
+              setShowSavedOnly(false);
+            }}
+          >
+            🏆 Leaderboard
+          </button>
         </div>
 
         {viewMode === "applied" && !showSavedOnly ? (
@@ -991,7 +1011,6 @@ function VolunteerApp() {
             <div className="task-grid">
               {myCreatedTasks.map((task) => (
                 <div key={task._id} className="manage-card">
-                  {/* 👇 UPDATED: Added duration display in the card */}
                   <div className="manage-card-header">
                     <h3>{task.title}</h3>
                     <span className="manage-duration-tag">
@@ -1144,6 +1163,38 @@ function VolunteerApp() {
                       <Icons.Trash /> Delete Task
                     </button>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : viewMode === "leaderboard" ? (
+          // 👇 THE NEW LEADERBOARD UI (VP-Q28)
+          <div className="leaderboard-section">
+            <h2>🏆 Top 10 Volunteers</h2>
+            <div className="leaderboard-list">
+              {leaderboard.map((v, index) => (
+                <div
+                  key={v._id}
+                  className={`leaderboard-row rank-${index + 1}`}
+                >
+                  <div className="rank-num">{index + 1}</div>
+                  <img
+                    src={
+                      v.profilePic ||
+                      `https://ui-avatars.com/api/?name=${v.name}`
+                    }
+                    alt={v.name}
+                    className="leaderboard-pic"
+                  />
+                  <div className="leaderboard-info">
+                    <span className="leaderboard-name">{v.name}</span>
+                    <span className="leaderboard-points">
+                      {v.totalVolunteerMinutes || 0} Minutes
+                    </span>
+                  </div>
+                  {index === 0 && <span className="medal">🥇</span>}
+                  {index === 1 && <span className="medal">🥈</span>}
+                  {index === 2 && <span className="medal">🥉</span>}
                 </div>
               ))}
             </div>

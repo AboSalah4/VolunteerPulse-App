@@ -351,6 +351,20 @@ app.post(
 app.get("/", (req, res) =>
   res.status(200).send("VolunteerPulse Server is Healthy and Awake!"),
 );
+// --- LEADERBOARD ROUTE (VP-Q28) ---
+// This route fetches users, sorts them by minutes (highest first), and limits to Top 10
+app.get("/api/leaderboard", async (req, res) => {
+  try {
+    const topVolunteers = await User.find({}, "name profilePic totalVolunteerMinutes")
+      .sort({ totalVolunteerMinutes: -1 }) // -1 means descending (highest to lowest)
+      .limit(10); // Only get the top 10 to keep it competitive
+    
+    res.json(topVolunteers);
+  } catch (err) {
+    console.error("Leaderboard fetch error:", err);
+    res.status(500).json({ error: "Failed to load leaderboard" });
+  }
+});
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`✅ Server on ${PORT}`));
