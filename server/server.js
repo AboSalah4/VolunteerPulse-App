@@ -51,6 +51,7 @@ const UserSchema = new mongoose.Schema({
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
+  linkedInUrl: { type: String, default: "" }, // VP-E06 field
   interests: { type: [String], default: [] },
   appliedTasks: [{ type: String }],
   savedTasks: [{ type: String }],
@@ -58,37 +59,7 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", UserSchema);
 
-// --- SEED DATA ---
-const seedTasks = async () => {
-  const count = await Task.countDocuments();
-  if (count > 0) return;
-  await Task.insertMany([
-    {
-      title: "Sort Books",
-      organization: "Public Library",
-      duration: 15,
-      category: "Education",
-      lat: 42.985,
-      lng: -81.246,
-      address: "251 Dundas St, London, ON",
-      createdBy: "admin@volunteerpulse.com",
-    },
-    {
-      title: "Walk Dogs",
-      organization: "Animal Shelter",
-      duration: 45,
-      category: "Animals",
-      lat: 42.99,
-      lng: -81.24,
-      address: "624 Clarke Rd, London, ON",
-      createdBy: "admin@volunteerpulse.com",
-    },
-  ]);
-  console.log("🌱 Database seeded!");
-};
-mongoose.connection.once("open", seedTasks);
-
-// --- TASK & APPLICATION ROUTES ---
+// --- ROUTES ---
 
 app.post("/api/tasks", async (req, res) => {
   try {
@@ -100,7 +71,6 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-// 👇 NEW: Edit Task Route
 app.put("/api/tasks/:id", async (req, res) => {
   try {
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, {
@@ -126,7 +96,6 @@ app.post("/api/update-status", async (req, res) => {
     const { taskId, userId, status } = req.body;
     const task = await Task.findById(taskId);
     const applicant = task.applicants.find((a) => a.userId === userId);
-
     let updatedPoints = undefined;
 
     if (applicant) {
@@ -139,22 +108,21 @@ app.post("/api/update-status", async (req, res) => {
           updatedPoints = student.totalVolunteerMinutes;
         }
       }
-
       applicant.status = status;
       await task.save();
-
       sendEmail({
         email: applicant.userEmail,
         subject: `Update: ${task.title}`,
         message: `Your application for "${task.title}" is now ${status.toLowerCase()}.`,
-      });
+      }).catch((err) => console.error("Email error:", err));
     }
-
-    res.status(200).json({
-      message: "Status updated",
-      updatedPoints,
-      verifiedUserId: userId,
-    });
+    res
+      .status(200)
+      .json({
+        message: "Status updated",
+        updatedPoints,
+        verifiedUserId: userId,
+      });
   } catch (err) {
     res.status(500).json({ error: "Update failed" });
   }
@@ -165,10 +133,8 @@ app.post("/api/flag-application", async (req, res) => {
     const { taskId, userId, reason } = req.body;
     const task = await Task.findById(taskId);
     const applicant = task.applicants.find((a) => a.userId === userId);
-
     applicant.isFlagged = true;
     applicant.flagReason = reason;
-
     let updatedPoints = undefined;
     if (applicant.status === "Completed") {
       const student = await User.findById(userId);
@@ -213,7 +179,6 @@ app.post("/api/apply-task", async (req, res) => {
     const user = await User.findOne({ email });
     const task = await Task.findById(taskId);
     if (!user || !task) return res.status(404).json({ message: "Not found" });
-
     if (user.appliedTasks.includes(taskId)) {
       user.appliedTasks = user.appliedTasks.filter((id) => id !== taskId);
       task.applicants = task.applicants.filter(
@@ -251,7 +216,7 @@ app.post("/api/save-task", async (req, res) => {
   }
 });
 
-// --- USER & AUTH ROUTES ---
+// --- AUTH & PROFILE ROUTES ---
 
 app.post("/api/login", async (req, res) => {
   try {
@@ -265,6 +230,7 @@ app.post("/api/login", async (req, res) => {
         name: user.name,
         email: user.email,
         profilePic: user.profilePic,
+        linkedInUrl: user.linkedInUrl || "",
         interests: user.interests,
         appliedTasks: user.appliedTasks,
         savedTasks: user.savedTasks,
@@ -298,6 +264,17 @@ app.post("/api/update-interests", async (req, res) => {
   res.json({ interests: user.interests });
 });
 
+// 👇 VP-E06: New Update LinkedIn Route
+app.post("/api/update-linkedin", async (req, res) => {
+  const { email, linkedInUrl } = req.body;
+  const user = await User.findOneAndUpdate(
+    { email },
+    { linkedInUrl },
+    { new: true },
+  );
+  res.json({ linkedInUrl: user.linkedInUrl });
+});
+
 app.post("/api/forgot-password", async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
   if (!user) return res.status(404).json({ message: "No user found." });
@@ -313,7 +290,7 @@ app.post("/api/forgot-password", async (req, res) => {
     email: user.email,
     subject: "Password Reset",
     message: `Link: ${resetUrl}`,
-  });
+  }).catch((err) => console.error(err));
   res.status(200).json({ message: "Token sent!" });
 });
 
@@ -348,20 +325,17 @@ app.post(
   },
 );
 
-app.get("/", (req, res) =>
-  res.status(200).send("VolunteerPulse Server is Healthy and Awake!"),
-);
-// --- LEADERBOARD ROUTE (VP-Q28) ---
-// This route fetches users, sorts them by minutes (highest first), and limits to Top 10
+// 👇 VP-E06 / VP-Q28 Leaderboard Route
 app.get("/api/leaderboard", async (req, res) => {
   try {
-    const topVolunteers = await User.find({}, "name profilePic totalVolunteerMinutes")
-      .sort({ totalVolunteerMinutes: -1 }) // -1 means descending (highest to lowest)
-      .limit(10); // Only get the top 10 to keep it competitive
-    
+    const topVolunteers = await User.find(
+      {},
+      "name profilePic totalVolunteerMinutes linkedInUrl",
+    )
+      .sort({ totalVolunteerMinutes: -1 })
+      .limit(10);
     res.json(topVolunteers);
   } catch (err) {
-    console.error("Leaderboard fetch error:", err);
     res.status(500).json({ error: "Failed to load leaderboard" });
   }
 });

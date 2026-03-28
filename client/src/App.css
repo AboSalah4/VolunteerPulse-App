@@ -884,3 +884,52 @@ body {
   color: #64748b;
   font-style: italic;
 }
+/* --- LINKEDIN PROFILE (VP-E06) --- */
+/* --- CLEANER LINKEDIN DESIGN (VP-E06) --- */
+.linkedin-input-wrapper {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.linkedin-input-wrapper input {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0 !important; /* Soft border */
+  font-size: 0.85rem;
+  width: 220px;
+  background-color: #ffffff !important; /* Clean white background */
+  color: #1e293b !important; /* Dark readable text */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.linkedin-input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.linkedin-input-wrapper button {
+  background-color: #0077b5 !important; /* Official LinkedIn Blue */
+  color: white !important;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.linkedin-input-wrapper button:hover {
+  background-color: #005582 !important;
+}
+
+/* Fix for the floating error message */
+.floating-error {
+  background-color: #fee2e2;
+  color: #b91c1c !important;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  font-weight: 600;
+}

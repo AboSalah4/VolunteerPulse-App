@@ -105,6 +105,11 @@ const Icons = {
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
     </svg>
   ),
+  LinkedIn: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+    </svg>
+  ),
 };
 
 function VolunteerApp() {
@@ -127,14 +132,9 @@ function VolunteerApp() {
   const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
-  // 👇 LEADERBOARD STATE (VP-Q28)
+  // 👇 VP-E06 LinkedIn State
+  const [linkedInUrl, setLinkedInUrl] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
-  const fetchLeaderboard = () => {
-    axios
-      .get(`${API_URL}/api/leaderboard`)
-      .then((res) => setLeaderboard(res.data))
-      .catch((err) => console.error("Leaderboard error:", err));
-  };
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -163,7 +163,6 @@ function VolunteerApp() {
     "Tech",
   ];
 
-  // Update this to your live Render URL when you push!
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
   useEffect(() => {
@@ -177,8 +176,12 @@ function VolunteerApp() {
   }, []);
 
   useEffect(() => {
-    if (user && user.interests) setSelectedInterests(user.interests);
-    else setSelectedInterests([]);
+    if (user) {
+      setSelectedInterests(user.interests || []);
+      setLinkedInUrl(user.linkedInUrl || ""); // VP-E06
+    } else {
+      setSelectedInterests([]);
+    }
   }, [user]);
 
   const fetchTasks = () => {
@@ -196,11 +199,32 @@ function VolunteerApp() {
       .catch((err) => console.error(err));
   };
 
+  const fetchLeaderboard = () => {
+    axios
+      .get(`${API_URL}/api/leaderboard`)
+      .then((res) => setLeaderboard(res.data))
+      .catch((err) => console.error("Leaderboard error:", err));
+  };
+
   useEffect(() => {
     fetchTasks();
     if (viewMode === "manage") fetchMyTasks();
-    if (viewMode === "leaderboard") fetchLeaderboard(); // Trigger fetch
+    if (viewMode === "leaderboard") fetchLeaderboard();
   }, [filter, viewMode, user]);
+
+  const handleSaveLinkedIn = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/api/update-linkedin`, {
+        email: user.email,
+        linkedInUrl,
+      });
+      login({ ...user, linkedInUrl: res.data.linkedInUrl });
+      setSuccessMsg("LinkedIn Profile Linked!");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError("Failed to link LinkedIn");
+    }
+  };
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
@@ -526,7 +550,7 @@ function VolunteerApp() {
     return { icon: "🌱", title: "Rising Star", css: "badge-starter" };
   };
 
-  const pulseData = getPulseData(user?.totalVolunteerMinutes);
+  const pulseData = user ? getPulseData(user.totalVolunteerMinutes) : null;
   const totalMins = user?.totalVolunteerMinutes || 0;
 
   const d = Math.floor(totalMins / 1440);
@@ -574,13 +598,25 @@ function VolunteerApp() {
                 <span className="welcome-text">
                   Welcome, <strong>{user.name}</strong>!
                 </span>
-                <div
-                  className={`pulse-badge ${pulseData.css}`}
-                  title={`${user.totalVolunteerMinutes || 0} Total Minutes Volunteered`}
-                >
-                  <span className="badge-icon">{pulseData.icon}</span>
-                  <span className="badge-time">{displayTime}</span>
-                  <span className="badge-title">({pulseData.title})</span>
+                {pulseData && (
+                  <div
+                    className={`pulse-badge ${pulseData.css}`}
+                    title={`${user.totalVolunteerMinutes || 0} Total Minutes Volunteered`}
+                  >
+                    <span className="badge-icon">{pulseData.icon}</span>
+                    <span className="badge-time">{displayTime}</span>
+                    <span className="badge-title">({pulseData.title})</span>
+                  </div>
+                )}
+                {/* 👇 VP-E06: LinkedIn Link Feature */}
+                <div className="linkedin-input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="LinkedIn Profile URL..."
+                    value={linkedInUrl}
+                    onChange={(e) => setLinkedInUrl(e.target.value)}
+                  />
+                  <button onClick={handleSaveLinkedIn}>Link</button>
                 </div>
               </div>
             </div>
@@ -815,29 +851,40 @@ function VolunteerApp() {
               </button>
             </form>
 
-            {!isResetMode && !isForgotPassword && (
-              <p
-                className="toggle-text"
-                onClick={() => setIsForgotPassword(true)}
-              >
-                Forgot Password?
-              </p>
-            )}
-            {!isResetMode && isForgotPassword && (
-              <p
-                className="toggle-text"
-                onClick={() => setIsForgotPassword(false)}
-              >
-                Back to Login
-              </p>
-            )}
-            {!isResetMode && !isForgotPassword && (
-              <p
-                className="toggle-text"
-                onClick={() => setIsRegistering(!isRegistering)}
-              >
-                {isRegistering ? "Back to Login" : "Need an account? Register"}
-              </p>
+            {/* 👇 FIXED LOGIN BUG: Ensures links are always visible */}
+            {!isResetMode && (
+              <div className="auth-links">
+                {isForgotPassword ? (
+                  <p
+                    className="toggle-text"
+                    onClick={() => setIsForgotPassword(false)}
+                  >
+                    Back to Login
+                  </p>
+                ) : isRegistering ? (
+                  <p
+                    className="toggle-text"
+                    onClick={() => setIsRegistering(false)}
+                  >
+                    Back to Login
+                  </p>
+                ) : (
+                  <>
+                    <p
+                      className="toggle-text"
+                      onClick={() => setIsForgotPassword(true)}
+                    >
+                      Forgot Password?
+                    </p>
+                    <p
+                      className="toggle-text"
+                      onClick={() => setIsRegistering(true)}
+                    >
+                      Need an account? Register
+                    </p>
+                  </>
+                )}
+              </div>
             )}
 
             <button
@@ -951,7 +998,6 @@ function VolunteerApp() {
               {showSavedOnly ? "Showing Saved" : "Show Saved"}
             </button>
           )}
-          {/* 👇 THE NEW LEADERBOARD BUTTON */}
           <button
             className={viewMode === "leaderboard" ? "active" : ""}
             onClick={() => {
@@ -967,7 +1013,7 @@ function VolunteerApp() {
           <div className="applied-section">
             <h2>My Volunteering Applications</h2>
 
-            {/* 👇 NEW: Status Tracking Dashboard Summary (VP-F05) */}
+            {/* 👇 VP-F05: RESTORED Status Summary Bar */}
             {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length >
               0 && (
               <div className="status-summary-bar">
@@ -1026,14 +1072,6 @@ function VolunteerApp() {
               </div>
             )}
 
-            {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length ===
-              0 && (
-              <p className="no-apps-msg">
-                You haven't applied to any tasks yet. Explore the list to get
-                started!
-              </p>
-            )}
-
             <div className="task-list">
               {tasks
                 .filter((t) => user?.appliedTasks?.includes(t._id))
@@ -1048,7 +1086,7 @@ function VolunteerApp() {
                       className={`task-card status-border-${status.toLowerCase()}`}
                     >
                       <div className={`status-banner ${status.toLowerCase()}`}>
-                        {status}
+                        {status.toUpperCase()}
                       </div>
                       <h3>{task.title}</h3>
                       <p className="org-name">{task.organization}</p>
@@ -1060,14 +1098,12 @@ function VolunteerApp() {
                           <Icons.Clock /> {formatDuration(task.duration)}
                         </span>
                       </div>
-
-                      {/* Show withdrawal only if not yet verified/completed */}
                       {status !== "Completed" && (
                         <button
                           className="withdraw-btn"
                           onClick={() => handleApply(task._id)}
                         >
-                          Withdraw Application
+                          Withdraw
                         </button>
                       )}
                     </div>
@@ -1120,7 +1156,6 @@ function VolunteerApp() {
                             ✉️ {app.userEmail}
                           </a>
                         </div>
-
                         <div className="action-btns">
                           {app.status === "Pending" && (
                             <>
@@ -1133,7 +1168,6 @@ function VolunteerApp() {
                                   )
                                 }
                                 className="accept-action-btn"
-                                title="Accept Applicant"
                               >
                                 Accept
                               </button>
@@ -1146,13 +1180,11 @@ function VolunteerApp() {
                                   )
                                 }
                                 className="decline-action-btn"
-                                title="Decline Applicant"
                               >
                                 Decline
                               </button>
                             </>
                           )}
-
                           {app.status === "Accepted" && (
                             <>
                               <button
@@ -1164,14 +1196,12 @@ function VolunteerApp() {
                                   )
                                 }
                                 className="complete-btn"
-                                title="Verify attendance and award points"
                               >
-                                Verify 🏅
+                                Verify🏅
                               </button>
                               <button
                                 onClick={() => handleFlag(task._id, app.userId)}
                                 className="flag-btn"
-                                title="Flag as Dishonest"
                               >
                                 🚩 Flag
                               </button>
@@ -1195,24 +1225,11 @@ function VolunteerApp() {
                                     handleFlag(task._id, app.userId)
                                   }
                                   className="flag-btn"
-                                  title="Flag as Dishonest"
                                 >
                                   🚩 Flag
                                 </button>
                               )}
                             </>
-                          )}
-
-                          {app.status === "Declined" && (
-                            <span
-                              style={{
-                                color: "#dc2626",
-                                fontWeight: "bold",
-                                fontSize: "0.85rem",
-                              }}
-                            >
-                              Declined
-                            </span>
                           )}
                         </div>
                       </div>
@@ -1238,7 +1255,6 @@ function VolunteerApp() {
             </div>
           </div>
         ) : viewMode === "leaderboard" ? (
-          // 👇 THE NEW LEADERBOARD UI (VP-Q28)
           <div className="leaderboard-section">
             <h2>🏆 Top 10 Volunteers</h2>
             <div className="leaderboard-list">
@@ -1253,8 +1269,8 @@ function VolunteerApp() {
                       v.profilePic ||
                       `https://ui-avatars.com/api/?name=${v.name}`
                     }
-                    alt={v.name}
                     className="leaderboard-pic"
+                    alt=""
                   />
                   <div className="leaderboard-info">
                     <span className="leaderboard-name">{v.name}</span>
@@ -1262,6 +1278,17 @@ function VolunteerApp() {
                       {v.totalVolunteerMinutes || 0} Minutes
                     </span>
                   </div>
+                  {/* 👇 VP-E06: RESTORED LinkedIn icon on Leaderboard */}
+                  {v.linkedInUrl && (
+                    <a
+                      href={v.linkedInUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="linkedin-leader-link"
+                    >
+                      <Icons.LinkedIn />
+                    </a>
+                  )}
                   {index === 0 && <span className="medal">🥇</span>}
                   {index === 1 && <span className="medal">🥈</span>}
                   {index === 2 && <span className="medal">🥉</span>}
@@ -1319,7 +1346,6 @@ function VolunteerApp() {
                         <Icons.Star /> Recommended
                       </div>
                     )}
-
                     <h3>{task.title}</h3>
                     <p className="org-name">{task.organization}</p>
                     <p className="task-address">
@@ -1363,11 +1389,7 @@ function VolunteerApp() {
                         {task.organization}
                         <br />
                         <button
-                          className={
-                            user?.appliedTasks?.includes(task._id)
-                              ? "applied-btn-small"
-                              : "apply-btn-small"
-                          }
+                          className="apply-btn-small"
                           onClick={() => handleApply(task._id)}
                         >
                           {user?.appliedTasks?.includes(task._id)
