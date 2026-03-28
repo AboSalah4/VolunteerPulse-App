@@ -966,8 +966,74 @@ function VolunteerApp() {
         {viewMode === "applied" && !showSavedOnly ? (
           <div className="applied-section">
             <h2>My Volunteering Applications</h2>
+
+            {/* 👇 NEW: Status Tracking Dashboard Summary (VP-F05) */}
+            {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length >
+              0 && (
+              <div className="status-summary-bar">
+                <div className="summary-item pending">
+                  <span className="count">
+                    {
+                      tasks.filter(
+                        (t) =>
+                          t.applicants?.find((a) => a.userEmail === user.email)
+                            ?.status === "Pending" &&
+                          user.appliedTasks.includes(t._id),
+                      ).length
+                    }
+                  </span>
+                  <span className="label">Pending</span>
+                </div>
+                <div className="summary-item accepted">
+                  <span className="count">
+                    {
+                      tasks.filter(
+                        (t) =>
+                          t.applicants?.find((a) => a.userEmail === user.email)
+                            ?.status === "Accepted" &&
+                          user.appliedTasks.includes(t._id),
+                      ).length
+                    }
+                  </span>
+                  <span className="label">Accepted</span>
+                </div>
+                <div className="summary-item completed">
+                  <span className="count">
+                    {
+                      tasks.filter(
+                        (t) =>
+                          t.applicants?.find((a) => a.userEmail === user.email)
+                            ?.status === "Completed" &&
+                          user.appliedTasks.includes(t._id),
+                      ).length
+                    }
+                  </span>
+                  <span className="label">Completed</span>
+                </div>
+                <div className="summary-item declined">
+                  <span className="count">
+                    {
+                      tasks.filter(
+                        (t) =>
+                          t.applicants?.find((a) => a.userEmail === user.email)
+                            ?.status === "Declined" &&
+                          user.appliedTasks.includes(t._id),
+                      ).length
+                    }
+                  </span>
+                  <span className="label">Declined</span>
+                </div>
+              </div>
+            )}
+
             {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length ===
-              0 && <p>No applications yet.</p>}
+              0 && (
+              <p className="no-apps-msg">
+                You haven't applied to any tasks yet. Explore the list to get
+                started!
+              </p>
+            )}
+
             <div className="task-list">
               {tasks
                 .filter((t) => user?.appliedTasks?.includes(t._id))
@@ -977,7 +1043,10 @@ function VolunteerApp() {
                   );
                   const status = application?.status || "Pending";
                   return (
-                    <div key={task._id} className="task-card">
+                    <div
+                      key={task._id}
+                      className={`task-card status-border-${status.toLowerCase()}`}
+                    >
                       <div className={`status-banner ${status.toLowerCase()}`}>
                         {status}
                       </div>
@@ -992,12 +1061,13 @@ function VolunteerApp() {
                         </span>
                       </div>
 
+                      {/* Show withdrawal only if not yet verified/completed */}
                       {status !== "Completed" && (
                         <button
                           className="withdraw-btn"
                           onClick={() => handleApply(task._id)}
                         >
-                          Withdraw
+                          Withdraw Application
                         </button>
                       )}
                     </div>
