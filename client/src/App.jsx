@@ -110,12 +110,25 @@ const Icons = {
       <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
     </svg>
   ),
+  Flag: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24" stroke="red">
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+      <line x1="4" y1="22" x2="4" y2="15"></line>
+    </svg>
+  ),
+  Copy: () => (
+    <svg className="svg-icon" viewBox="0 0 24 24" style={{ color: "#2563eb" }}>
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+    </svg>
+  ),
 };
 
 function VolunteerApp() {
   const { user, login, logout } = useContext(AuthContext);
 
   const [tasks, setTasks] = useState([]);
+  const [flaggedTasks, setFlaggedTasks] = useState([]);
   const [myCreatedTasks, setMyCreatedTasks] = useState([]);
   const [filter, setFilter] = useState(999999);
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,7 +145,6 @@ function VolunteerApp() {
   const [viewMode, setViewMode] = useState("list");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
-  // 👇 VP-E06 LinkedIn State
   const [linkedInUrl, setLinkedInUrl] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
 
@@ -163,7 +175,7 @@ function VolunteerApp() {
     "Tech",
   ];
 
-  const API_URL = "https://volunteer-pulse-backend.onrender.com";
+  const API_URL = "http://localhost:5001";
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -178,7 +190,7 @@ function VolunteerApp() {
   useEffect(() => {
     if (user) {
       setSelectedInterests(user.interests || []);
-      setLinkedInUrl(user.linkedInUrl || ""); // VP-E06
+      setLinkedInUrl(user.linkedInUrl || "");
     } else {
       setSelectedInterests([]);
     }
@@ -206,10 +218,18 @@ function VolunteerApp() {
       .catch((err) => console.error("Leaderboard error:", err));
   };
 
+  const fetchFlaggedTasks = () => {
+    axios
+      .get(`${API_URL}/api/admin/flagged-tasks`)
+      .then((res) => setFlaggedTasks(res.data))
+      .catch((err) => console.error("Flagged tasks error:", err));
+  };
+
   useEffect(() => {
     fetchTasks();
     if (viewMode === "manage") fetchMyTasks();
     if (viewMode === "leaderboard") fetchLeaderboard();
+    if (viewMode === "flagged") fetchFlaggedTasks();
   }, [filter, viewMode, user]);
 
   const handleSaveLinkedIn = async () => {
@@ -276,7 +296,6 @@ function VolunteerApp() {
     e.preventDefault();
     setError("");
     setIsSubmittingTask(true);
-
     let totalMinutes = parseInt(currentEditTask.durationValue);
     if (currentEditTask.durationUnit === "Hours") totalMinutes *= 60;
     if (currentEditTask.durationUnit === "Days") totalMinutes *= 1440;
@@ -309,12 +328,7 @@ function VolunteerApp() {
       val /= 60;
       unit = "Hours";
     }
-
-    setCurrentEditTask({
-      ...task,
-      durationValue: val,
-      durationUnit: unit,
-    });
+    setCurrentEditTask({ ...task, durationValue: val, durationUnit: unit });
     setShowEditModal(true);
   };
 
@@ -330,14 +344,12 @@ function VolunteerApp() {
           ? "Task verified and points awarded!"
           : `Applicant ${status}!`,
       );
-
       if (
         res.data.updatedPoints !== undefined &&
         res.data.verifiedUserId === user.id
       ) {
         login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
       }
-
       fetchMyTasks();
       fetchTasks();
       setTimeout(() => setSuccessMsg(""), 3000);
@@ -351,7 +363,6 @@ function VolunteerApp() {
       "Please enter the reason for flagging this report as dishonest:",
     );
     if (!reason) return;
-
     try {
       const res = await axios.post(`${API_URL}/api/flag-application`, {
         taskId,
@@ -359,18 +370,35 @@ function VolunteerApp() {
         reason,
       });
       setSuccessMsg("Application successfully flagged for review!");
-
       if (res.data.updatedPoints !== undefined && userId === user.id) {
         login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
       }
-
       fetchMyTasks();
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
-      console.error("Error flagging:", err);
       setError("Failed to flag application.");
-      setTimeout(() => setError(""), 3000);
     }
+  };
+
+  const handleFlagTask = async (taskId) => {
+    const reason = prompt(
+      "Why are you reporting this task? (Spam, Fake, Inappropriate)",
+    );
+    if (!reason) return;
+    try {
+      await axios.post(`${API_URL}/api/tasks/flag/${taskId}`, { reason });
+      setSuccessMsg("Thank you. Task reported to Admin.");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError("Report failed.");
+    }
+  };
+
+  // 👇 VP-E10 Copy Address Function
+  const handleCopyAddress = (address) => {
+    navigator.clipboard.writeText(address);
+    setSuccessMsg("Address copied to clipboard!");
+    setTimeout(() => setSuccessMsg(""), 2000);
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -380,6 +408,7 @@ function VolunteerApp() {
         setSuccessMsg("Deleted!");
         fetchTasks();
         fetchMyTasks();
+        if (viewMode === "flagged") fetchFlaggedTasks();
         setTimeout(() => setSuccessMsg(""), 2000);
       } catch (err) {
         setError("Delete failed.");
@@ -552,11 +581,9 @@ function VolunteerApp() {
 
   const pulseData = user ? getPulseData(user.totalVolunteerMinutes) : null;
   const totalMins = user?.totalVolunteerMinutes || 0;
-
   const d = Math.floor(totalMins / 1440);
   const h = Math.floor((totalMins % 1440) / 60);
   const m = totalMins % 60;
-
   let displayTime = "";
   if (d > 0) displayTime += `${d}d `;
   if (h > 0 || d > 0) displayTime += `${h}h `;
@@ -608,7 +635,6 @@ function VolunteerApp() {
                     <span className="badge-title">({pulseData.title})</span>
                   </div>
                 )}
-                {/* 👇 VP-E06: LinkedIn Link Feature */}
                 <div className="linkedin-input-wrapper">
                   <input
                     type="text"
@@ -643,7 +669,6 @@ function VolunteerApp() {
         </div>
       </header>
 
-      {/* MODALS */}
       {showCreateModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -850,8 +875,7 @@ function VolunteerApp() {
                       : "Log In"}
               </button>
             </form>
-
-            {/* 👇 FIXED LOGIN BUG: Ensures links are always visible */}
+            {/* 👇 RESTORED FULL AUTH LINKS */}
             {!isResetMode && (
               <div className="auth-links">
                 {isForgotPassword ? (
@@ -886,7 +910,6 @@ function VolunteerApp() {
                 )}
               </div>
             )}
-
             <button
               className="close-btn"
               onClick={() => {
@@ -988,7 +1011,6 @@ function VolunteerApp() {
               <Icons.Settings /> Manage
             </button>
           )}
-
           {user && (
             <button
               className={`save-filter-btn ${showSavedOnly ? "active" : ""}`}
@@ -1007,13 +1029,23 @@ function VolunteerApp() {
           >
             🏆 Leaderboard
           </button>
+
+          {user && user.role === "admin" && (
+            <button
+              className={viewMode === "flagged" ? "active" : ""}
+              onClick={() => {
+                setViewMode("flagged");
+                setShowSavedOnly(false);
+              }}
+            >
+              🚩 Reports
+            </button>
+          )}
         </div>
 
         {viewMode === "applied" && !showSavedOnly ? (
           <div className="applied-section">
             <h2>My Volunteering Applications</h2>
-
-            {/* 👇 VP-F05: RESTORED Status Summary Bar */}
             {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length >
               0 && (
               <div className="status-summary-bar">
@@ -1071,7 +1103,6 @@ function VolunteerApp() {
                 </div>
               </div>
             )}
-
             <div className="task-list">
               {tasks
                 .filter((t) => user?.appliedTasks?.includes(t._id))
@@ -1090,14 +1121,22 @@ function VolunteerApp() {
                       </div>
                       <h3>{task.title}</h3>
                       <p className="org-name">{task.organization}</p>
+
+                      {/* 👇 Location 1: Copy Address */}
                       <p className="task-address">
                         <Icons.MapPin /> {task.address}
+                        <button
+                          className="copy-address-btn"
+                          onClick={() => handleCopyAddress(task.address)}
+                          title="Copy Address"
+                        >
+                          <Icons.Copy />
+                        </button>
                       </p>
-                      <div className="badge-container">
-                        <span className="duration-badge macro">
-                          <Icons.Clock /> {formatDuration(task.duration)}
-                        </span>
-                      </div>
+
+                      <span className="duration-badge macro">
+                        <Icons.Clock /> {formatDuration(task.duration)}
+                      </span>
                       {status !== "Completed" && (
                         <button
                           className="withdraw-btn"
@@ -1123,28 +1162,20 @@ function VolunteerApp() {
                       <Icons.Clock /> {formatDuration(task.duration)}
                     </span>
                   </div>
-
                   <div className="applicant-list">
                     {task.applicants.map((app) => (
                       <div key={app.userId} className="applicant-row">
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "4px",
-                          }}
-                        >
-                          <div>
-                            <strong>{app.userName}</strong>{" "}
-                            {app.isFlagged && (
-                              <span title={app.flagReason}>🚩</span>
-                            )}
-                            <span
-                              style={{ fontSize: "0.85rem", color: "#64748b" }}
-                            >
-                              ({app.status})
-                            </span>
-                          </div>
+                        <div>
+                          <strong>{app.userName}</strong>{" "}
+                          {app.isFlagged && (
+                            <span title={app.flagReason}>🚩</span>
+                          )}{" "}
+                          <span
+                            style={{ fontSize: "0.85rem", color: "#64748b" }}
+                          >
+                            ({app.status})
+                          </span>
+                          <br />
                           <a
                             href={`mailto:${app.userEmail}`}
                             style={{
@@ -1235,7 +1266,6 @@ function VolunteerApp() {
                       </div>
                     ))}
                   </div>
-
                   <div className="manage-footer-btns">
                     <button
                       className="edit-task-btn"
@@ -1257,11 +1287,6 @@ function VolunteerApp() {
         ) : viewMode === "leaderboard" ? (
           <div className="leaderboard-section">
             <h2>🌟 Volunteer Talent Directory</h2>
-            <p className="directory-subtitle">
-              Explore our dedicated community and connect with top talent.
-            </p>
-
-            {/* Grouping logic */}
             {["Gold", "Silver", "Bronze", "Starter"].map((level) => {
               const filteredGroup = leaderboard.filter((v) => {
                 const hours = Math.floor((v.totalVolunteerMinutes || 0) / 60);
@@ -1270,9 +1295,7 @@ function VolunteerApp() {
                 if (level === "Bronze") return hours >= 10 && hours < 50;
                 return hours < 10;
               });
-
               if (filteredGroup.length === 0) return null;
-
               return (
                 <div
                   key={level}
@@ -1280,11 +1303,11 @@ function VolunteerApp() {
                 >
                   <h3 className="group-header">
                     {level === "Gold"
-                      ? "🏆 Gold Level (720+ hrs)"
+                      ? "🏆 Gold Level"
                       : level === "Silver"
-                        ? "🥈 Silver Level (50+ hrs)"
+                        ? "🥈 Silver Level"
                         : level === "Bronze"
-                          ? "🥉 Bronze Level (10+ hrs)"
+                          ? "🥉 Bronze Level"
                           : "🌱 Rising Stars"}
                   </h3>
                   <div className="leaderboard-list">
@@ -1310,7 +1333,6 @@ function VolunteerApp() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="linkedin-leader-link"
-                            title="View Professional Profile"
                           >
                             <Icons.LinkedIn />
                           </a>
@@ -1322,12 +1344,55 @@ function VolunteerApp() {
               );
             })}
           </div>
+        ) : viewMode === "flagged" ? (
+          <div className="flagged-section">
+            <h2>🚨 Community Reports</h2>
+            <p style={{ marginBottom: "20px" }}>
+              The following tasks were reported by users as inappropriate or
+              spam.
+            </p>
+            <div className="task-list">
+              {flaggedTasks.length === 0 && (
+                <p className="no-apps-msg">
+                  No flagged tasks currently awaiting review.
+                </p>
+              )}
+              {flaggedTasks.map((task) => (
+                <div key={task._id} className="task-card flagged-border">
+                  <div className="flag-reason-banner">
+                    Reason: {task.communityFlagReason}
+                  </div>
+                  <h3>{task.title}</h3>
+                  <p className="org-name">{task.organization}</p>
+
+                  {/* 👇 Location 2: Copy Address */}
+                  <p className="task-address">
+                    <Icons.MapPin /> {task.address}
+                    <button
+                      className="copy-address-btn"
+                      onClick={() => handleCopyAddress(task.address)}
+                      title="Copy Address"
+                    >
+                      <Icons.Copy />
+                    </button>
+                  </p>
+
+                  <button
+                    className="delete-task-btn"
+                    onClick={() => handleDeleteTask(task._id)}
+                  >
+                    <Icons.Trash /> Remove Spam
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
           <>
             <div className="search-filter-container">
               <input
                 type="text"
-                placeholder="Search tasks or organizations..."
+                placeholder="Search tasks..."
                 className="clean-search-input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1350,15 +1415,27 @@ function VolunteerApp() {
               <div className="task-list">
                 {sortedTasks.map((task) => (
                   <div key={task._id} className="task-card">
-                    {user && (
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDeleteTask(task._id)}
-                        title="Delete Task"
-                      >
-                        <Icons.Trash />
-                      </button>
-                    )}
+                    {/* 👇 TOP RIGHT ACTIONS */}
+                    <button
+                      className="report-btn"
+                      title="Report Task"
+                      onClick={() => handleFlagTask(task._id)}
+                    >
+                      <Icons.Flag />
+                    </button>
+
+                    {user &&
+                      (user.role === "admin" ||
+                        user.email === task.createdBy) && (
+                        <button
+                          className="delete-btn"
+                          title="Delete Task"
+                          onClick={() => handleDeleteTask(task._id)}
+                        >
+                          <Icons.Trash />
+                        </button>
+                      )}
+
                     <button
                       className={`heart-btn ${user?.savedTasks?.includes(task._id) ? "saved" : ""}`}
                       onClick={() => handleSaveTask(task._id)}
@@ -1367,6 +1444,7 @@ function VolunteerApp() {
                         filled={user?.savedTasks?.includes(task._id)}
                       />
                     </button>
+
                     {user?.interests?.includes(task.category) && (
                       <div className="recommended-badge">
                         <Icons.Star /> Recommended
@@ -1374,16 +1452,23 @@ function VolunteerApp() {
                     )}
                     <h3>{task.title}</h3>
                     <p className="org-name">{task.organization}</p>
+
+                    {/* 👇 Location 3: Copy Address */}
                     <p className="task-address">
                       <Icons.MapPin /> {task.address}
+                      <button
+                        className="copy-address-btn"
+                        onClick={() => handleCopyAddress(task.address)}
+                        title="Copy Address"
+                      >
+                        <Icons.Copy />
+                      </button>
                     </p>
-                    <span className="category-tag">{task.category}</span>
-                    <div className="badge-container">
-                      <span className="duration-badge macro">
-                        <Icons.Clock /> {formatDuration(task.duration)}
-                      </span>
-                    </div>
 
+                    <span className="category-tag">{task.category}</span>
+                    <span className="duration-badge macro">
+                      <Icons.Clock /> {formatDuration(task.duration)}
+                    </span>
                     <button
                       className={
                         user?.appliedTasks?.includes(task._id)

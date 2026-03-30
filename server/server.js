@@ -17,7 +17,27 @@ app.use("/api/applications", applicationRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected!"))
+  .then(() => {
+    console.log("✅ MongoDB Connected!");
+    // 👇 ONE-TIME FIX: Automatically approve old tasks so they show up in the list
+    const updateOldTasks = async () => {
+      try {
+        const Task = mongoose.model("Task");
+        const result = await Task.updateMany(
+          { status: { $exists: false } },
+          { $set: { status: "Approved" } },
+        );
+        if (result.modifiedCount > 0) {
+          console.log(
+            `🌱 Auto-approved ${result.modifiedCount} existing tasks.`,
+          );
+        }
+      } catch (err) {
+        console.error("Error updating old tasks:", err);
+      }
+    };
+    updateOldTasks();
+  })
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // --- MODELS ---
@@ -31,8 +51,10 @@ const TaskSchema = new mongoose.Schema({
   lng: Number,
   address: String,
   createdBy: String,
-  // 👇 VP-Q26: Task Approval Status
-  status: { type: String, default: "Pending" }, // "Pending", "Approved", "Rejected"
+  // 👇 Community Moderation Logic
+  status: { type: String, default: "Approved" }, // Tasks are live by default
+  isFlaggedByCommunity: { type: Boolean, default: false },
+  communityFlagReason: { type: String, default: "" },
   applicants: [
     {
       userId: String,
@@ -50,12 +72,11 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   name: { type: String, required: true },
+  role: { type: String, default: "student" }, // "student" or "admin"
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
   linkedInUrl: { type: String, default: "" },
-  // 👇 VP-Q26: User Roles
-  role: { type: String, default: "student" }, // "student", "admin"
   interests: { type: [String], default: [] },
   appliedTasks: [{ type: String }],
   savedTasks: [{ type: String }],
@@ -63,68 +84,35 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", UserSchema);
 
-// --- RESTORED: SEED DATA ---
-const seedTasks = async () => {
-  const count = await Task.countDocuments();
-  if (count > 0) return;
-  await Task.insertMany([
-    {
-      title: "Sort Books",
-      organization: "Public Library",
-      duration: 15,
-      category: "Education",
-      lat: 42.985,
-      lng: -81.246,
-      address: "251 Dundas St, London, ON",
-      createdBy: "admin@volunteerpulse.com",
-      status: "Approved",
-    },
-    {
-      title: "Walk Dogs",
-      organization: "Animal Shelter",
-      duration: 45,
-      category: "Animals",
-      lat: 42.99,
-      lng: -81.24,
-      address: "624 Clarke Rd, London, ON",
-      createdBy: "admin@volunteerpulse.com",
-      status: "Approved",
-    },
-  ]);
-  console.log("🌱 Database seeded with approved tasks!");
-};
-mongoose.connection.once("open", seedTasks);
+// --- MODERATION ROUTES ---
 
-// --- ADMIN API ROUTES (VP-Q26) ---
-
-// 1. Fetch only pending tasks for the Admin UI
-app.get("/api/admin/pending-tasks", async (req, res) => {
+// 👇 Route for students to report/flag a task
+app.post("/api/tasks/flag/:id", async (req, res) => {
   try {
-    const pendingTasks = await Task.find({ status: "Pending" });
-    res.json(pendingTasks);
+    const { reason } = req.body;
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      { isFlaggedByCommunity: true, communityFlagReason: reason },
+      { new: true },
+    );
+    res.json({ message: "Task reported to Admin", updatedTask });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch pending tasks" });
+    res.status(500).json({ error: "Reporting failed" });
   }
 });
 
-// 2. Approve or Reject a task from the Admin UI
-app.put("/api/tasks/approve/:id", async (req, res) => {
+// 👇 Route for Admin to see only tasks flagged by the community
+app.get("/api/admin/flagged-tasks", async (req, res) => {
   try {
-    const { status } = req.body; // Expects "Approved" or "Rejected"
-    const updatedTask = await Task.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true },
-    );
-    res.json(updatedTask);
+    const flaggedTasks = await Task.find({ isFlaggedByCommunity: true });
+    res.json(flaggedTasks);
   } catch (err) {
-    res.status(500).json({ error: "Approval failed" });
+    res.status(500).json({ error: "Failed to fetch reports" });
   }
 });
 
 // --- GENERAL TASK ROUTES ---
 
-// Updated: Students only see "Approved" tasks on the main list
 app.get("/api/tasks", async (req, res) => {
   const { maxTime } = req.query;
   try {
@@ -134,13 +122,13 @@ app.get("/api/tasks", async (req, res) => {
     });
     res.json(tasks);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch tasks" });
+    res.status(500).json({ error: "Fetch failed" });
   }
 });
 
 app.post("/api/tasks", async (req, res) => {
   try {
-    const newTask = new Task(req.body); // Defaults to "Pending"
+    const newTask = new Task(req.body); // Defaults to status: "Approved"
     await newTask.save();
     res.status(201).json(newTask);
   } catch (err) {
@@ -202,34 +190,6 @@ app.post("/api/update-status", async (req, res) => {
       });
   } catch (err) {
     res.status(500).json({ error: "Update failed" });
-  }
-});
-
-app.post("/api/flag-application", async (req, res) => {
-  try {
-    const { taskId, userId, reason } = req.body;
-    const task = await Task.findById(taskId);
-    const applicant = task.applicants.find((a) => a.userId === userId);
-    applicant.isFlagged = true;
-    applicant.flagReason = reason;
-    let updatedPoints = undefined;
-    if (applicant.status === "Completed") {
-      const student = await User.findById(userId);
-      if (student) {
-        student.totalVolunteerMinutes = Math.max(
-          0,
-          (student.totalVolunteerMinutes || 0) - task.duration,
-        );
-        await student.save();
-        updatedPoints = student.totalVolunteerMinutes;
-      }
-    }
-    await task.save();
-    res
-      .status(200)
-      .json({ message: "Flagged", updatedPoints, flaggedUserId: userId });
-  } catch (err) {
-    res.status(500).json({ error: "Flag failed" });
   }
 });
 
@@ -298,7 +258,7 @@ app.post("/api/login", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role, // 👇 Returns role for Frontend Admin Logic
+        role: user.role,
         profilePic: user.profilePic,
         linkedInUrl: user.linkedInUrl || "",
         interests: user.interests,
@@ -394,7 +354,6 @@ app.post(
   },
 );
 
-// Volunteer Talent Directory (Full List)
 app.get("/api/leaderboard", async (req, res) => {
   try {
     const volunteers = await User.find(
