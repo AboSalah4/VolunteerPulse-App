@@ -31,6 +31,8 @@ const TaskSchema = new mongoose.Schema({
   lng: Number,
   address: String,
   createdBy: String,
+  // 👇 VP-Q26: Task Approval Status
+  status: { type: String, default: "Pending" }, // "Pending", "Approved", "Rejected"
   applicants: [
     {
       userId: String,
@@ -51,7 +53,9 @@ const UserSchema = new mongoose.Schema({
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
-  linkedInUrl: { type: String, default: "" }, // VP-E06 field
+  linkedInUrl: { type: String, default: "" },
+  // 👇 VP-Q26: User Roles
+  role: { type: String, default: "student" }, // "student", "admin"
   interests: { type: [String], default: [] },
   appliedTasks: [{ type: String }],
   savedTasks: [{ type: String }],
@@ -59,11 +63,84 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", UserSchema);
 
-// --- ROUTES ---
+// --- RESTORED: SEED DATA ---
+const seedTasks = async () => {
+  const count = await Task.countDocuments();
+  if (count > 0) return;
+  await Task.insertMany([
+    {
+      title: "Sort Books",
+      organization: "Public Library",
+      duration: 15,
+      category: "Education",
+      lat: 42.985,
+      lng: -81.246,
+      address: "251 Dundas St, London, ON",
+      createdBy: "admin@volunteerpulse.com",
+      status: "Approved",
+    },
+    {
+      title: "Walk Dogs",
+      organization: "Animal Shelter",
+      duration: 45,
+      category: "Animals",
+      lat: 42.99,
+      lng: -81.24,
+      address: "624 Clarke Rd, London, ON",
+      createdBy: "admin@volunteerpulse.com",
+      status: "Approved",
+    },
+  ]);
+  console.log("🌱 Database seeded with approved tasks!");
+};
+mongoose.connection.once("open", seedTasks);
+
+// --- ADMIN API ROUTES (VP-Q26) ---
+
+// 1. Fetch only pending tasks for the Admin UI
+app.get("/api/admin/pending-tasks", async (req, res) => {
+  try {
+    const pendingTasks = await Task.find({ status: "Pending" });
+    res.json(pendingTasks);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch pending tasks" });
+  }
+});
+
+// 2. Approve or Reject a task from the Admin UI
+app.put("/api/tasks/approve/:id", async (req, res) => {
+  try {
+    const { status } = req.body; // Expects "Approved" or "Rejected"
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true },
+    );
+    res.json(updatedTask);
+  } catch (err) {
+    res.status(500).json({ error: "Approval failed" });
+  }
+});
+
+// --- GENERAL TASK ROUTES ---
+
+// Updated: Students only see "Approved" tasks on the main list
+app.get("/api/tasks", async (req, res) => {
+  const { maxTime } = req.query;
+  try {
+    const tasks = await Task.find({
+      status: "Approved",
+      duration: { $lte: parseInt(maxTime) || 999999 },
+    });
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
 
 app.post("/api/tasks", async (req, res) => {
   try {
-    const newTask = new Task(req.body);
+    const newTask = new Task(req.body); // Defaults to "Pending"
     await newTask.save();
     res.status(201).json(newTask);
   } catch (err) {
@@ -165,14 +242,6 @@ app.delete("/api/tasks/:id", async (req, res) => {
   }
 });
 
-app.get("/api/tasks", async (req, res) => {
-  const { maxTime } = req.query;
-  const tasks = await Task.find({
-    duration: { $lte: parseInt(maxTime) || 999999 },
-  });
-  res.json(tasks);
-});
-
 app.post("/api/apply-task", async (req, res) => {
   try {
     const { email, taskId } = req.body;
@@ -229,6 +298,7 @@ app.post("/api/login", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role, // 👇 Returns role for Frontend Admin Logic
         profilePic: user.profilePic,
         linkedInUrl: user.linkedInUrl || "",
         interests: user.interests,
@@ -264,7 +334,6 @@ app.post("/api/update-interests", async (req, res) => {
   res.json({ interests: user.interests });
 });
 
-// 👇 VP-E06: New Update LinkedIn Route
 app.post("/api/update-linkedin", async (req, res) => {
   const { email, linkedInUrl } = req.body;
   const user = await User.findOneAndUpdate(
@@ -325,18 +394,18 @@ app.post(
   },
 );
 
-// 👇 VP-E06 / VP-Q28 Leaderboard Route
+// Volunteer Talent Directory (Full List)
 app.get("/api/leaderboard", async (req, res) => {
   try {
-    // Removed .limit(10) so employers can find ANYONE
-    const allVolunteers = await User.find({}, "name profilePic totalVolunteerMinutes linkedInUrl")
-      .sort({ totalVolunteerMinutes: -1 }); 
-    
-    res.json(allVolunteers);
+    const volunteers = await User.find(
+      {},
+      "name profilePic totalVolunteerMinutes linkedInUrl",
+    ).sort({ totalVolunteerMinutes: -1 });
+    res.json(volunteers);
   } catch (err) {
     res.status(500).json({ error: "Failed to load directory" });
   }
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`✅ Server on ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
