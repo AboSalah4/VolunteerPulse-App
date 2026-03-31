@@ -148,6 +148,10 @@ function VolunteerApp() {
   const [linkedInUrl, setLinkedInUrl] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
 
+  // 👇 VP-E07 Weekly Goal state
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [newGoal, setNewGoal] = useState(120);
+
   const [newTask, setNewTask] = useState({
     title: "",
     organization: "",
@@ -175,6 +179,7 @@ function VolunteerApp() {
     "Tech",
   ];
 
+  // Using production URL for push
   const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
   useEffect(() => {
@@ -191,6 +196,7 @@ function VolunteerApp() {
     if (user) {
       setSelectedInterests(user.interests || []);
       setLinkedInUrl(user.linkedInUrl || "");
+      setNewGoal(user.weeklyGoal || 120);
     } else {
       setSelectedInterests([]);
     }
@@ -243,6 +249,22 @@ function VolunteerApp() {
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
       setError("Failed to link LinkedIn");
+    }
+  };
+
+  // 👇 VP-E07 Handle Saving Weekly Goal
+  const handleSaveGoal = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/api/update-goal`, {
+        email: user.email,
+        weeklyGoal: newGoal,
+      });
+      login({ ...user, weeklyGoal: res.data.weeklyGoal });
+      setIsEditingGoal(false);
+      setSuccessMsg("Weekly goal updated!");
+      setTimeout(() => setSuccessMsg(""), 2000);
+    } catch (err) {
+      setError("Failed to update goal");
     }
   };
 
@@ -394,11 +416,16 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 VP-E10 Copy Address Function
   const handleCopyAddress = (address) => {
     navigator.clipboard.writeText(address);
     setSuccessMsg("Address copied to clipboard!");
     setTimeout(() => setSuccessMsg(""), 2000);
+  };
+
+  // 👇 VP-F06 Clear Filters Function
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setFilter(999999);
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -578,11 +605,6 @@ function VolunteerApp() {
       return { icon: "🥉", title: "Bronze Level", css: "badge-bronze" };
     return { icon: "🌱", title: "Rising Star", css: "badge-starter" };
   };
-  
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setFilter(999999);
-  };
 
   const pulseData = user ? getPulseData(user.totalVolunteerMinutes) : null;
   const totalMins = user?.totalVolunteerMinutes || 0;
@@ -648,6 +670,56 @@ function VolunteerApp() {
                     onChange={(e) => setLinkedInUrl(e.target.value)}
                   />
                   <button onClick={handleSaveLinkedIn}>Link</button>
+                </div>
+
+                {/* 👇 VP-E07 Weekly Goal Progress Bar */}
+                <div className="weekly-goal-section">
+                  <div className="goal-top-row">
+                    <span className="goal-title">Weekly Goal</span>
+                    {!isEditingGoal && (
+                      <span
+                        className="goal-edit-btn"
+                        onClick={() => {
+                          setNewGoal(user.weeklyGoal || 120);
+                          setIsEditingGoal(true);
+                        }}
+                      >
+                        ✏️ Edit
+                      </span>
+                    )}
+                  </div>
+
+                  {isEditingGoal ? (
+                    <div className="goal-edit-controls">
+                      <input
+                        type="number"
+                        value={newGoal}
+                        onChange={(e) => setNewGoal(Number(e.target.value))}
+                        className="goal-input"
+                      />
+                      <button
+                        onClick={handleSaveGoal}
+                        className="goal-save-btn"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="progress-track">
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${Math.min(((user.totalVolunteerMinutes || 0) / (user.weeklyGoal || 120)) * 100, 100)}%`,
+                          }}
+                        ></div>
+                      </div>
+                      <div className="goal-text">
+                        {user.totalVolunteerMinutes || 0} /{" "}
+                        {user.weeklyGoal || 120} mins
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -880,7 +952,6 @@ function VolunteerApp() {
                       : "Log In"}
               </button>
             </form>
-            {/* 👇 RESTORED FULL AUTH LINKS */}
             {!isResetMode && (
               <div className="auth-links">
                 {isForgotPassword ? (
@@ -1127,7 +1198,6 @@ function VolunteerApp() {
                       <h3>{task.title}</h3>
                       <p className="org-name">{task.organization}</p>
 
-                      {/* 👇 Location 1: Copy Address */}
                       <p className="task-address">
                         <Icons.MapPin /> {task.address}
                         <button
@@ -1370,7 +1440,6 @@ function VolunteerApp() {
                   <h3>{task.title}</h3>
                   <p className="org-name">{task.organization}</p>
 
-                  {/* 👇 Location 2: Copy Address */}
                   <p className="task-address">
                     <Icons.MapPin /> {task.address}
                     <button
@@ -1413,7 +1482,8 @@ function VolunteerApp() {
                   <option value="60">1 Hour</option>
                   <option value="999999">Show All</option>
                 </select>
-                {/* 👇 NEW: Clear Filters Button */}
+
+                {/* 👇 VP-F06 Clear Filters Button */}
                 {(searchQuery !== "" || filter != 999999) && (
                   <button
                     className="clear-filters-btn"
@@ -1429,7 +1499,6 @@ function VolunteerApp() {
               <div className="task-list">
                 {sortedTasks.map((task) => (
                   <div key={task._id} className="task-card">
-                    {/* 👇 TOP RIGHT ACTIONS */}
                     <button
                       className="report-btn"
                       title="Report Task"
@@ -1467,7 +1536,6 @@ function VolunteerApp() {
                     <h3>{task.title}</h3>
                     <p className="org-name">{task.organization}</p>
 
-                    {/* 👇 Location 3: Copy Address */}
                     <p className="task-address">
                       <Icons.MapPin /> {task.address}
                       <button

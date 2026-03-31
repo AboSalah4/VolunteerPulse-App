@@ -1109,3 +1109,76 @@ body {
 .clear-filters-btn:hover {
   background-color: #fee2e2 !important; /* Light red hover background */
 }
+/* --- VP-E07: WEEKLY GOAL TRACKER --- */
+.weekly-goal-section {
+  background: #f8fafc;
+  padding: 12px 15px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-top: 15px;
+  width: 275px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.goal-top-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.goal-edit-btn {
+  cursor: pointer;
+  color: #2563eb;
+  transition: transform 0.2s;
+}
+
+.goal-edit-btn:hover {
+  transform: scale(1.1);
+}
+
+.progress-track {
+  background: #e2e8f0;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.progress-fill {
+  background: #10b981; /* Success Green */
+  height: 100%;
+  transition: width 0.5s ease-in-out;
+}
+
+.goal-text {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: right;
+  font-weight: 700;
+}
+
+.goal-edit-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.goal-input {
+  width: 80px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1 !important;
+  font-size: 0.9rem;
+}
+
+.goal-save-btn {
+  background: #2563eb !important;
+  color: white !important;
+  border: none;
+  border-radius: 6px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: bold;
+}

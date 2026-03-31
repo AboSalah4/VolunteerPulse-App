@@ -19,7 +19,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected!");
-    // 👇 ONE-TIME FIX: Automatically approve old tasks so they show up in the list
+    // Auto-approve old tasks script
     const updateOldTasks = async () => {
       try {
         const Task = mongoose.model("Task");
@@ -51,8 +51,7 @@ const TaskSchema = new mongoose.Schema({
   lng: Number,
   address: String,
   createdBy: String,
-  // 👇 Community Moderation Logic
-  status: { type: String, default: "Approved" }, // Tasks are live by default
+  status: { type: String, default: "Approved" },
   isFlaggedByCommunity: { type: Boolean, default: false },
   communityFlagReason: { type: String, default: "" },
   applicants: [
@@ -72,7 +71,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   name: { type: String, required: true },
-  role: { type: String, default: "student" }, // "student" or "admin"
+  role: { type: String, default: "student" },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   profilePic: { type: String, default: "" },
@@ -81,12 +80,13 @@ const UserSchema = new mongoose.Schema({
   appliedTasks: [{ type: String }],
   savedTasks: [{ type: String }],
   totalVolunteerMinutes: { type: Number, default: 0 },
+  // 👇 NEW: Weekly Goal field (Defaults to 120 minutes / 2 hours)
+  weeklyGoal: { type: Number, default: 120 },
 });
 const User = mongoose.model("User", UserSchema);
 
 // --- MODERATION ROUTES ---
 
-// 👇 Route for students to report/flag a task
 app.post("/api/tasks/flag/:id", async (req, res) => {
   try {
     const { reason } = req.body;
@@ -101,7 +101,6 @@ app.post("/api/tasks/flag/:id", async (req, res) => {
   }
 });
 
-// 👇 Route for Admin to see only tasks flagged by the community
 app.get("/api/admin/flagged-tasks", async (req, res) => {
   try {
     const flaggedTasks = await Task.find({ isFlaggedByCommunity: true });
@@ -128,7 +127,7 @@ app.get("/api/tasks", async (req, res) => {
 
 app.post("/api/tasks", async (req, res) => {
   try {
-    const newTask = new Task(req.body); // Defaults to status: "Approved"
+    const newTask = new Task(req.body);
     await newTask.save();
     res.status(201).json(newTask);
   } catch (err) {
@@ -265,6 +264,7 @@ app.post("/api/login", async (req, res) => {
         appliedTasks: user.appliedTasks,
         savedTasks: user.savedTasks,
         totalVolunteerMinutes: user.totalVolunteerMinutes || 0,
+        weeklyGoal: user.weeklyGoal || 120, // 👇 NEW: Send goal to frontend
       },
     });
   } catch (err) {
@@ -302,6 +302,21 @@ app.post("/api/update-linkedin", async (req, res) => {
     { new: true },
   );
   res.json({ linkedInUrl: user.linkedInUrl });
+});
+
+// 👇 NEW: Route to update the Weekly Goal
+app.post("/api/update-goal", async (req, res) => {
+  try {
+    const { email, weeklyGoal } = req.body;
+    const user = await User.findOneAndUpdate(
+      { email },
+      { weeklyGoal },
+      { new: true },
+    );
+    res.json({ weeklyGoal: user.weeklyGoal });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update goal" });
+  }
 });
 
 app.post("/api/forgot-password", async (req, res) => {
