@@ -179,7 +179,7 @@ function VolunteerApp() {
   ];
 
   // Currently set to localhost for your testing
-  const API_URL = "http://localhost:5001";
+  const API_URL = "https://volunteer-pulse-backend.onrender.com";
 
   useEffect(() => {
     const path = window.location.pathname;
