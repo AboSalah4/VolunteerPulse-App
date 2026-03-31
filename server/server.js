@@ -80,7 +80,6 @@ const UserSchema = new mongoose.Schema({
   appliedTasks: [{ type: String }],
   savedTasks: [{ type: String }],
   totalVolunteerMinutes: { type: Number, default: 0 },
-  // 👇 NEW: Weekly Goal field (Defaults to 120 minutes / 2 hours)
   weeklyGoal: { type: Number, default: 120 },
 });
 const User = mongoose.model("User", UserSchema);
@@ -180,13 +179,11 @@ app.post("/api/update-status", async (req, res) => {
         message: `Your application for "${task.title}" is now ${status.toLowerCase()}.`,
       }).catch((err) => console.error("Email error:", err));
     }
-    res
-      .status(200)
-      .json({
-        message: "Status updated",
-        updatedPoints,
-        verifiedUserId: userId,
-      });
+    res.status(200).json({
+      message: "Status updated",
+      updatedPoints,
+      verifiedUserId: userId,
+    });
   } catch (err) {
     res.status(500).json({ error: "Update failed" });
   }
@@ -264,7 +261,7 @@ app.post("/api/login", async (req, res) => {
         appliedTasks: user.appliedTasks,
         savedTasks: user.savedTasks,
         totalVolunteerMinutes: user.totalVolunteerMinutes || 0,
-        weeklyGoal: user.weeklyGoal || 120, // 👇 NEW: Send goal to frontend
+        weeklyGoal: user.weeklyGoal || 120,
       },
     });
   } catch (err) {
@@ -304,7 +301,6 @@ app.post("/api/update-linkedin", async (req, res) => {
   res.json({ linkedInUrl: user.linkedInUrl });
 });
 
-// 👇 NEW: Route to update the Weekly Goal
 app.post("/api/update-goal", async (req, res) => {
   try {
     const { email, weeklyGoal } = req.body;
@@ -316,6 +312,20 @@ app.post("/api/update-goal", async (req, res) => {
     res.json({ weeklyGoal: user.weeklyGoal });
   } catch (err) {
     res.status(500).json({ error: "Failed to update goal" });
+  }
+});
+
+// 👇 NEW: Route to delete user account (VP-E09)
+app.delete("/api/delete-account/:email", async (req, res) => {
+  try {
+    const deletedUser = await User.findOneAndDelete({
+      email: req.params.email,
+    });
+    if (!deletedUser)
+      return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "Account successfully deleted" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete account" });
   }
 });
 

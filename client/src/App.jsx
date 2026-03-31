@@ -148,7 +148,6 @@ function VolunteerApp() {
   const [linkedInUrl, setLinkedInUrl] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
 
-  // 👇 VP-E07 Weekly Goal state
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [newGoal, setNewGoal] = useState(120);
 
@@ -179,8 +178,8 @@ function VolunteerApp() {
     "Tech",
   ];
 
-  // Using production URL for push
-  const API_URL = "https://volunteer-pulse-backend.onrender.com";
+  // Currently set to localhost for your testing
+  const API_URL = "http://localhost:5001";
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -252,7 +251,6 @@ function VolunteerApp() {
     }
   };
 
-  // 👇 VP-E07 Handle Saving Weekly Goal
   const handleSaveGoal = async () => {
     try {
       const res = await axios.post(`${API_URL}/api/update-goal`, {
@@ -261,10 +259,10 @@ function VolunteerApp() {
       });
       login({ ...user, weeklyGoal: res.data.weeklyGoal });
       setIsEditingGoal(false);
-      setSuccessMsg("Weekly goal updated!");
+      setSuccessMsg("Weekly Goal successfully updated!");
       setTimeout(() => setSuccessMsg(""), 2000);
     } catch (err) {
-      setError("Failed to update goal");
+      setError("Failed to update Weekly Goal");
     }
   };
 
@@ -422,10 +420,29 @@ function VolunteerApp() {
     setTimeout(() => setSuccessMsg(""), 2000);
   };
 
-  // 👇 VP-F06 Clear Filters Function
   const handleClearFilters = () => {
     setSearchQuery("");
     setFilter(999999);
+  };
+
+  // 👇 NEW: Handle Delete Account Function (VP-E09)
+  const handleDeleteAccount = async () => {
+    if (
+      window.confirm(
+        "ARE YOU SURE? This will permanently delete your account, your volunteer minutes, and all your data. This cannot be undone.",
+      )
+    ) {
+      try {
+        await axios.delete(`${API_URL}/api/delete-account/${user.email}`);
+        setSuccessMsg("Account deleted. We're sorry to see you go.");
+        setTimeout(() => {
+          logout();
+          setViewMode("list");
+        }, 2000);
+      } catch (err) {
+        setError("Failed to delete account. Please try again.");
+      }
+    }
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -672,10 +689,9 @@ function VolunteerApp() {
                   <button onClick={handleSaveLinkedIn}>Link</button>
                 </div>
 
-                {/* 👇 VP-E07 Weekly Goal Progress Bar */}
                 <div className="weekly-goal-section">
                   <div className="goal-top-row">
-                    <span className="goal-title">Weekly Goal</span>
+                    <span className="goal-title">My Weekly Goal</span>
                     {!isEditingGoal && (
                       <span
                         className="goal-edit-btn"
@@ -684,7 +700,7 @@ function VolunteerApp() {
                           setIsEditingGoal(true);
                         }}
                       >
-                        ✏️ Edit
+                        ✏️ Change
                       </span>
                     )}
                   </div>
@@ -696,12 +712,13 @@ function VolunteerApp() {
                         value={newGoal}
                         onChange={(e) => setNewGoal(Number(e.target.value))}
                         className="goal-input"
+                        placeholder="Mins/week"
                       />
                       <button
                         onClick={handleSaveGoal}
                         className="goal-save-btn"
                       >
-                        Save
+                        Set Weekly Goal
                       </button>
                     </div>
                   ) : (
@@ -715,12 +732,20 @@ function VolunteerApp() {
                         ></div>
                       </div>
                       <div className="goal-text">
-                        {user.totalVolunteerMinutes || 0} /{" "}
-                        {user.weeklyGoal || 120} mins
+                        <strong>{user.totalVolunteerMinutes || 0}</strong> /{" "}
+                        {user.weeklyGoal || 120} mins this week
                       </div>
                     </>
                   )}
                 </div>
+
+                {/* 👇 NEW: VP-E09 Delete Account Link */}
+                <span
+                  className="delete-account-link"
+                  onClick={handleDeleteAccount}
+                >
+                  Delete Account
+                </span>
               </div>
             </div>
           )}
@@ -1483,15 +1508,14 @@ function VolunteerApp() {
                   <option value="999999">Show All</option>
                 </select>
 
-                {/* 👇 VP-F06 Clear Filters Button */}
-                {(searchQuery !== "" || filter != 999999) && (
+                {searchQuery !== "" || filter != 999999 ? (
                   <button
                     className="clear-filters-btn"
                     onClick={handleClearFilters}
                   >
                     Clear Filters
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
 

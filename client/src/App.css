@@ -1182,3 +1182,18 @@ body {
   cursor: pointer;
   font-weight: bold;
 }
+/* --- VP-E09 DELETE ACCOUNT LINK --- */
+.delete-account-link {
+  font-size: 0.75rem;
+  color: #ef4444; /* Subtle red */
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 10px;
+  display: inline-block;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.delete-account-link:hover {
+  opacity: 1;
+}
