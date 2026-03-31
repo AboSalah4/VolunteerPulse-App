@@ -695,7 +695,7 @@ function VolunteerApp() {
 
                 <div className="weekly-goal-section">
                   <div className="goal-top-row">
-                    <span className="goal-title">My Weekly Goal</span>
+                    <span className="goal-title">My Goal</span>
                     {!isEditingGoal && (
                       <span
                         className="goal-edit-btn"
@@ -704,7 +704,8 @@ function VolunteerApp() {
                           setIsEditingGoal(true);
                         }}
                       >
-                        ✏️ Change
+                        {/* 👈 Replace the emoji with the Icon component */}
+                        <Icons.Edit /> Change
                       </span>
                     )}
                   </div>
@@ -722,7 +723,7 @@ function VolunteerApp() {
                         onClick={handleSaveGoal}
                         className="goal-save-btn"
                       >
-                        Set Weekly Goal
+                        Set Goal
                       </button>
                     </div>
                   ) : (
@@ -737,7 +738,7 @@ function VolunteerApp() {
                       </div>
                       <div className="goal-text">
                         <strong>{user.totalVolunteerMinutes || 0}</strong> /{" "}
-                        {user.weeklyGoal || 120} mins this week
+                        {user.weeklyGoal || 120} Minutes
                       </div>
                     </>
                   )}

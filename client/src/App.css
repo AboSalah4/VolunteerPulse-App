@@ -1232,3 +1232,31 @@ body {
 .delete-account-link:hover {
   opacity: 1;
 }
+/* --- GOAL HEADER SPACING (VP-E07) --- */
+.goal-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Pushes text left and button right */
+  margin-bottom: 10px;
+}
+
+.goal-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 👈 Adds padding between the new icon and the word "Change" */
+  cursor: pointer;
+  color: #2563eb;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.goal-edit-btn:hover {
+  opacity: 0.7;
+}
+
+.goal-edit-btn .svg-icon {
+  width: 14px; /* Slightly smaller icon to match the text size */
+  height: 14px;
+  stroke-width: 2.5;
+}
