@@ -1161,9 +1161,9 @@ body {
 }
 
 .linkedin-brand-icon:hover {
-  color: #005582;
-  transform: scale(1.15) rotate(-3deg);
-  filter: drop-shadow(0 4px 8px rgba(0, 119, 181, 0.4));
+  background-color: #005582; /* Darker blue on hover */
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 15px rgba(0, 119, 181, 0.4);
 }
 
 /* --- PREMIUM LINKEDIN STYLING --- */
@@ -1183,11 +1183,16 @@ body {
 
 .linkedin-leader-link {
   display: inline-flex;
-  padding: 6px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  align-items: center;
+  justify-content: center;
+  background-color: #e7ebed !important; /* 👈 Bold Brand Blue */
+  padding: 15px !important;
+  border-radius: 15px;
+  margin-left: auto; /* 👈 Pushes it to the right side of the card */
   text-decoration: none;
+  border: 2px solid #005582;
+  box-shadow: 0 4px 6px rgba(0, 119, 181, 0.2);
+  transition: all 0.2s ease;
 }
 
 .goal-edit-controls {
