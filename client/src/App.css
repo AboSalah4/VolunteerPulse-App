@@ -1111,53 +1111,83 @@ body {
 }
 /* --- VP-E07: WEEKLY GOAL TRACKER --- */
 .weekly-goal-section {
-  background: #f8fafc;
-  padding: 12px 15px;
-  border-radius: 12px;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 14px;
   border: 1px solid #e2e8f0;
   margin-top: 15px;
-  width: 275px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.goal-top-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #475569;
-}
-
-.goal-edit-btn {
-  cursor: pointer;
-  color: #2563eb;
-  transition: transform 0.2s;
-}
-
-.goal-edit-btn:hover {
-  transform: scale(1.1);
+.goal-title {
+  color: #0f172a; /* Deeper black for text */
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
 }
 
 .progress-track {
-  background: #e2e8f0;
-  height: 10px;
-  border-radius: 5px;
+  background: #d7d7dc; /* Much darker gray for high contrast */
+  height: 14px;
+  border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 5px;
+  margin: 12px 0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .progress-fill {
-  background: #10b981; /* Success Green */
+  background: linear-gradient(90deg, #00df82, #00b894); /* Vibrant neon green */
   height: 100%;
-  transition: width 0.5s ease-in-out;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 223, 130, 0.6); /* Glow effect for visibility */
+  transition: width 0.8s ease-in-out;
 }
 
 .goal-text {
-  font-size: 0.75rem;
-  color: #64748b;
+  font-size: 0.85rem;
+  color: #1e293b;
+  font-weight: 800; /* Bolder text */
   text-align: right;
-  font-weight: 700;
+}
+
+/* --- POLISHED LINKEDIN ICON --- */
+.linkedin-brand-icon {
+  color: #0077b5; /* Official LinkedIn Blue */
+  width: 22px;
+  height: 22px;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 119, 181, 0.2));
+}
+
+.linkedin-brand-icon:hover {
+  color: #005582;
+  transform: scale(1.15) rotate(-3deg);
+  filter: drop-shadow(0 4px 8px rgba(0, 119, 181, 0.4));
+}
+
+/* --- PREMIUM LINKEDIN STYLING --- */
+.linkedin-premium-icon {
+  color: #0077b5; /* Official LinkedIn Blue */
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 119, 181, 0.15));
+}
+
+.linkedin-leader-link:hover .linkedin-premium-icon {
+  color: #004182; /* Darker blue on hover */
+  transform: scale(1.2); /* Grows slightly to show it is a link */
+  filter: drop-shadow(0 0 5px rgba(10, 102, 194, 0.3));
+}
+
+.linkedin-leader-link {
+  display: inline-flex;
+  padding: 6px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
 }
 
 .goal-edit-controls {
