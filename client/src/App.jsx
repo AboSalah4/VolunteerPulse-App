@@ -578,6 +578,11 @@ function VolunteerApp() {
       return { icon: "🥉", title: "Bronze Level", css: "badge-bronze" };
     return { icon: "🌱", title: "Rising Star", css: "badge-starter" };
   };
+  
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setFilter(999999);
+  };
 
   const pulseData = user ? getPulseData(user.totalVolunteerMinutes) : null;
   const totalMins = user?.totalVolunteerMinutes || 0;
@@ -1408,6 +1413,15 @@ function VolunteerApp() {
                   <option value="60">1 Hour</option>
                   <option value="999999">Show All</option>
                 </select>
+                {/* 👇 NEW: Clear Filters Button */}
+                {(searchQuery !== "" || filter != 999999) && (
+                  <button
+                    className="clear-filters-btn"
+                    onClick={handleClearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 

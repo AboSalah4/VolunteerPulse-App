@@ -1092,3 +1092,20 @@ body {
 .copy-address-btn:hover {
   transform: scale(1.2);
 }
+/* --- CLEAR FILTERS BUTTON (VP-F06) --- */
+.clear-filters-btn {
+  background: none !important;
+  border: none !important;
+  color: #ef4444 !important; /* Subtle red */
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 8px 12px;
+  margin-left: 10px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.clear-filters-btn:hover {
+  background-color: #fee2e2 !important; /* Light red hover background */
+}
