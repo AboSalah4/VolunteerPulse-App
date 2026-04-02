@@ -10,7 +10,8 @@ import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
@@ -151,10 +152,11 @@ function VolunteerApp() {
 
   const [linkedInUrl, setLinkedInUrl] = useState("");
   const [leaderboard, setLeaderboard] = useState([]);
-
+  const [streak, setStreak] = useState(1);
+  const [lastActiveDate, setLastActiveDate] = useState(new Date());
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [newGoal, setNewGoal] = useState(120);
-
+  const [showPulse, setShowPulse] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
     organization: "",
@@ -357,30 +359,38 @@ function VolunteerApp() {
   };
 
   const handleUpdateStatus = async (taskId, userId, status) => {
-    try {
-      const res = await axios.post(`${API_URL}/api/update-status`, {
-        taskId,
-        userId,
-        status,
-      });
-      setSuccessMsg(
-        status === "Completed"
-          ? "Task verified and points awarded!"
-          : `Applicant ${status}!`,
-      );
-      if (
-        res.data.updatedPoints !== undefined &&
-        res.data.verifiedUserId === user.id
-      ) {
-        login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
-      }
-      fetchMyTasks();
-      fetchTasks();
-      setTimeout(() => setSuccessMsg(""), 3000);
-    } catch (err) {
-      console.error("Status update failed");
+  try {
+    const res = await axios.post(`${API_URL}/api/update-status`, {
+      taskId,
+      userId,
+      status,
+    });
+
+    setSuccessMsg(
+      status === "Completed"
+        ? "Task verified and points awarded!"
+        : `Applicant ${status}!`,
+    );
+
+    if (status === "Completed") {
+      setShowPulse(true);
+      setTimeout(() => setShowPulse(false), 2000);
     }
-  };
+
+    if (
+      res.data.updatedPoints !== undefined &&
+      res.data.verifiedUserId === user.id
+    ) {
+      login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
+    }
+
+    fetchMyTasks();
+    fetchTasks();
+    setTimeout(() => setSuccessMsg(""), 3000);
+  } catch (err) {
+    console.error("Status update failed");
+  }
+};
 
   const handleFlag = async (taskId, userId) => {
     const reason = prompt(
@@ -417,6 +427,23 @@ function VolunteerApp() {
       setError("Report failed.");
     }
   };
+
+  const updateStreak = () => {
+  const today = new Date();
+  const last = new Date(lastActiveDate);
+
+  const diffDays = Math.floor(
+    (today - last) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays === 1) {
+    setStreak((prev) => prev + 1);
+  } else if (diffDays > 1) {
+    setStreak(1);
+  }
+
+  setLastActiveDate(today);
+};
 
   const handleCopyAddress = (address) => {
     navigator.clipboard.writeText(address);
@@ -576,21 +603,64 @@ function VolunteerApp() {
     }
   };
 
-  const handleApply = async (taskId) => {
-    if (!user) {
-      setShowLogin(true);
-      return;
-    }
-    try {
-      const res = await axios.post(`${API_URL}/api/apply-task`, {
-        email: user.email,
-        taskId,
-      });
-      login({ ...user, appliedTasks: res.data.appliedTasks });
-      fetchTasks();
-    } catch (err) {
-      console.error("Apply failed", err);
-    }
+const handleApply = async (taskId) => {
+  if (!user) {
+    setShowLogin(true);
+    return;
+  }
+  try {
+    const res = await axios.post(`${API_URL}/api/apply-task`, {
+      email: user.email,
+      taskId,
+    });
+    login({ ...user, appliedTasks: res.data.appliedTasks });
+
+    updateStreak();
+
+    fetchTasks();
+  } catch (err) {
+    console.error("Apply failed", err);
+  }
+};
+
+  const exportCompletedTasksPDF = () => {
+    const completedTasks = tasks.filter((task) => {
+      if (!user) return false;
+      const application = task.applicants?.find(
+        (a) => a.userEmail === user.email
+      );
+      return application?.status === "Completed";
+    });
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("VolunteerPulse Completed Tasks Report", 14, 15);
+
+    doc.setFontSize(11);
+    doc.text(`Student: ${user?.name || "Unknown"}`, 14, 24);
+    doc.text(`Email: ${user?.email || "Unknown"}`, 14, 31);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 38);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [["Task Title", "Organization", "Category", "Duration", "Status"]],
+      body: completedTasks.map((task) => {
+        const application = task.applicants?.find(
+          (a) => a.userEmail === user.email
+        );
+
+        return [
+          task.title,
+          task.organization,
+          task.category,
+          formatDuration(task.duration),
+          application?.status || "Completed",
+        ];
+      }),
+    });
+
+    doc.save("completed-tasks-report.pdf");
   };
 
   const formatDuration = (mins) => {
@@ -628,6 +698,38 @@ function VolunteerApp() {
   };
 
   const pulseData = user ? getPulseData(user.totalVolunteerMinutes) : null;
+  const shareUrl = "https://volunteer-pulse-eight.vercel.app/";
+  const completedTasks = user?.appliedTasks?.length || 0;
+  const totalHoursShared = Math.floor((user?.totalVolunteerMinutes || 0) / 60);
+
+  const shareText = `I completed ${completedTasks} volunteer tasks and contributed ${totalHoursShared} hours on VolunteerPulse! Join me and make an impact! 🌱`;
+
+  const shareToFacebook = () => {
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      "_blank"
+    );
+  };
+
+  const shareToTwitter = () => {
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+      "_blank"
+    );
+  };
+
+  const shareToWhatsApp = () => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+      "_blank"
+    );
+  };
+
+  const copyShareLink = async () => {
+    await navigator.clipboard.writeText(shareUrl);
+    setSuccessMsg("Link copied!");
+    setTimeout(() => setSuccessMsg(""), 2000);
+  };
   const totalMins = user?.totalVolunteerMinutes || 0;
   const d = Math.floor(totalMins / 1440);
   const h = Math.floor((totalMins % 1440) / 60);
@@ -673,6 +775,10 @@ function VolunteerApp() {
                 <span className="welcome-text">
                   Welcome, <strong>{user.name}</strong>!
                 </span>
+                <div className="streak-box">
+                  🔥 {streak} day streak
+                  {streak >= 3 && <span className="streak-bonus"> 🎉 Bonus unlocked!</span>}
+                </div>
                 {pulseData && (
                   <div
                     className={`pulse-badge ${pulseData.css}`}
@@ -683,6 +789,12 @@ function VolunteerApp() {
                     <span className="badge-title">({pulseData.title})</span>
                   </div>
                 )}
+                <div className="share-box">
+                  <button onClick={shareToFacebook}>Facebook</button>
+                  <button onClick={shareToTwitter}>X</button>
+                  <button onClick={shareToWhatsApp}>WhatsApp</button>
+                  <button onClick={copyShareLink}>Copy</button>
+                </div>
                 <div className="linkedin-input-wrapper">
                   <input
                     type="text"
@@ -1051,7 +1163,12 @@ function VolunteerApp() {
             {successMsg}
           </div>
         )}
-
+        {showPulse && (
+          <div className="pulse-animation">
+            <div className="pulse-circle"></div>
+            <div className="pulse-text">🎉 Impact Pulse!</div>
+          </div>
+        )}
         {user && (
           <div className="interests-section">
             <h3>Personalize Your Feed</h3>
@@ -1152,6 +1269,9 @@ function VolunteerApp() {
         {viewMode === "applied" && !showSavedOnly ? (
           <div className="applied-section">
             <h2>My Volunteering Applications</h2>
+             <button className="export-pdf-btn" onClick={exportCompletedTasksPDF}>
+              Export Completed Tasks PDF
+            </button>
             {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length >
               0 && (
               <div className="status-summary-bar">
