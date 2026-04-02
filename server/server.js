@@ -391,5 +391,48 @@ app.get("/api/leaderboard", async (req, res) => {
   }
 });
 
+// Fix for VP-Q27: Flagging Dishonest Reports (with point subtraction)
+app.post("/api/flag-application", async (req, res) => {
+  try {
+    const { taskId, userId, reason } = req.body;
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    const applicant = task.applicants.find((a) => a.userId === userId);
+    if (!applicant)
+      return res.status(404).json({ error: "Applicant not found" });
+
+    // Update the applicant's flag status
+    applicant.isFlagged = true;
+    applicant.flagReason = reason;
+
+    // Subtraction logic: Only subtract if they were previously "Completed"
+    let updatedPoints;
+    if (applicant.status === "Completed") {
+      const student = await User.findById(userId);
+      if (student) {
+        student.totalVolunteerMinutes = Math.max(
+          0,
+          (student.totalVolunteerMinutes || 0) - task.duration,
+        );
+        await student.save();
+        updatedPoints = student.totalVolunteerMinutes;
+      }
+      // Optional: Change status back to pending or declined so they can't be re-verified easily
+      applicant.status = "Declined";
+    }
+
+    await task.save();
+    res.json({
+      message: "Application successfully flagged",
+      isFlagged: true,
+      updatedPoints,
+    });
+  } catch (err) {
+    console.error("Flagging Error:", err);
+    res.status(500).json({ error: "Flagging failed" });
+  }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));

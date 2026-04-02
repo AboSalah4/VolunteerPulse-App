@@ -359,38 +359,38 @@ function VolunteerApp() {
   };
 
   const handleUpdateStatus = async (taskId, userId, status) => {
-  try {
-    const res = await axios.post(`${API_URL}/api/update-status`, {
-      taskId,
-      userId,
-      status,
-    });
+    try {
+      const res = await axios.post(`${API_URL}/api/update-status`, {
+        taskId,
+        userId,
+        status,
+      });
 
-    setSuccessMsg(
-      status === "Completed"
-        ? "Task verified and points awarded!"
-        : `Applicant ${status}!`,
-    );
+      setSuccessMsg(
+        status === "Completed"
+          ? "Task verified and points awarded!"
+          : `Applicant ${status}!`,
+      );
 
-    if (status === "Completed") {
-      setShowPulse(true);
-      setTimeout(() => setShowPulse(false), 2000);
+      if (status === "Completed") {
+        setShowPulse(true);
+        setTimeout(() => setShowPulse(false), 2000);
+      }
+
+      if (
+        res.data.updatedPoints !== undefined &&
+        res.data.verifiedUserId === user.id
+      ) {
+        login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
+      }
+
+      fetchMyTasks();
+      fetchTasks();
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      console.error("Status update failed");
     }
-
-    if (
-      res.data.updatedPoints !== undefined &&
-      res.data.verifiedUserId === user.id
-    ) {
-      login({ ...user, totalVolunteerMinutes: res.data.updatedPoints });
-    }
-
-    fetchMyTasks();
-    fetchTasks();
-    setTimeout(() => setSuccessMsg(""), 3000);
-  } catch (err) {
-    console.error("Status update failed");
-  }
-};
+  };
 
   const handleFlag = async (taskId, userId) => {
     const reason = prompt(
@@ -429,21 +429,19 @@ function VolunteerApp() {
   };
 
   const updateStreak = () => {
-  const today = new Date();
-  const last = new Date(lastActiveDate);
+    const today = new Date();
+    const last = new Date(lastActiveDate);
 
-  const diffDays = Math.floor(
-    (today - last) / (1000 * 60 * 60 * 24)
-  );
+    const diffDays = Math.floor((today - last) / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 1) {
-    setStreak((prev) => prev + 1);
-  } else if (diffDays > 1) {
-    setStreak(1);
-  }
+    if (diffDays === 1) {
+      setStreak((prev) => prev + 1);
+    } else if (diffDays > 1) {
+      setStreak(1);
+    }
 
-  setLastActiveDate(today);
-};
+    setLastActiveDate(today);
+  };
 
   const handleCopyAddress = (address) => {
     navigator.clipboard.writeText(address);
@@ -603,31 +601,31 @@ function VolunteerApp() {
     }
   };
 
-const handleApply = async (taskId) => {
-  if (!user) {
-    setShowLogin(true);
-    return;
-  }
-  try {
-    const res = await axios.post(`${API_URL}/api/apply-task`, {
-      email: user.email,
-      taskId,
-    });
-    login({ ...user, appliedTasks: res.data.appliedTasks });
+  const handleApply = async (taskId) => {
+    if (!user) {
+      setShowLogin(true);
+      return;
+    }
+    try {
+      const res = await axios.post(`${API_URL}/api/apply-task`, {
+        email: user.email,
+        taskId,
+      });
+      login({ ...user, appliedTasks: res.data.appliedTasks });
 
-    updateStreak();
+      updateStreak();
 
-    fetchTasks();
-  } catch (err) {
-    console.error("Apply failed", err);
-  }
-};
+      fetchTasks();
+    } catch (err) {
+      console.error("Apply failed", err);
+    }
+  };
 
   const exportCompletedTasksPDF = () => {
     const completedTasks = tasks.filter((task) => {
       if (!user) return false;
       const application = task.applicants?.find(
-        (a) => a.userEmail === user.email
+        (a) => a.userEmail === user.email,
       );
       return application?.status === "Completed";
     });
@@ -647,7 +645,7 @@ const handleApply = async (taskId) => {
       head: [["Task Title", "Organization", "Category", "Duration", "Status"]],
       body: completedTasks.map((task) => {
         const application = task.applicants?.find(
-          (a) => a.userEmail === user.email
+          (a) => a.userEmail === user.email,
         );
 
         return [
@@ -707,21 +705,21 @@ const handleApply = async (taskId) => {
   const shareToFacebook = () => {
     window.open(
       `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-      "_blank"
+      "_blank",
     );
   };
 
   const shareToTwitter = () => {
     window.open(
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-      "_blank"
+      "_blank",
     );
   };
 
   const shareToWhatsApp = () => {
     window.open(
       `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-      "_blank"
+      "_blank",
     );
   };
 
@@ -777,7 +775,9 @@ const handleApply = async (taskId) => {
                 </span>
                 <div className="streak-box">
                   🔥 {streak} day streak
-                  {streak >= 3 && <span className="streak-bonus"> 🎉 Bonus unlocked!</span>}
+                  {streak >= 3 && (
+                    <span className="streak-bonus"> 🎉 Bonus unlocked!</span>
+                  )}
                 </div>
                 {pulseData && (
                   <div
@@ -1269,7 +1269,10 @@ const handleApply = async (taskId) => {
         {viewMode === "applied" && !showSavedOnly ? (
           <div className="applied-section">
             <h2>My Volunteering Applications</h2>
-             <button className="export-pdf-btn" onClick={exportCompletedTasksPDF}>
+            <button
+              className="export-pdf-btn"
+              onClick={exportCompletedTasksPDF}
+            >
               Export Completed Tasks PDF
             </button>
             {tasks.filter((t) => user?.appliedTasks?.includes(t._id)).length >
